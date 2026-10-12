@@ -1,7 +1,5 @@
 # nestegg
 
-Your whole financial picture in a terminal, from a database you own.
-
 nestegg mirrors your [Monarch Money](https://www.monarch.com) data (accounts,
 transactions, investments, budgets, recurring bills) and, optionally, your
 private company equity from [Carta](https://carta.com) into a local PostgreSQL
