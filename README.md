@@ -18,6 +18,79 @@ database, then lets you browse it with a fast keyboard-driven terminal app.
 - **Sync**: a container that logs into Monarch with your credentials and
   mirrors everything every few hours.
 
+## A tour
+
+Every screenshot here is the built-in demo household, which is made up and
+needs no database. To look around it yourself before setting anything up:
+
+```bash
+cargo install --git https://github.com/brandon-tallent/nestegg nestegg --locked
+nestegg --demo
+```
+
+Each screen is one key away (`1` to `9`, then `0`), `/` searches the one you
+are on, and `?` lists every key.
+
+**Dashboard.** Net worth over time, this month's spending against last
+month's, the latest transactions, what is due next, investments, credit score
+and goals.
+
+![The Dashboard screen](docs/screenshots/dashboard.png)
+
+**Accounts.** Every account, grouped by type. The selected one shows its
+balance history, the payments expected through the end of the month and its
+recent activity; a loan also shows when it will be paid off.
+
+![The Accounts screen](docs/screenshots/accounts.png)
+
+**Transactions.** The whole history, with pending, unreviewed and recurring
+ones marked.
+
+![The Transactions screen](docs/screenshots/transactions.png)
+
+`/` narrows the list as you type. Words match merchants, categories, accounts
+and dates in any order, and `>100` or `<50` test the amount:
+
+![Transactions searched for groceries over $100](docs/screenshots/search.png)
+
+**Cash Flow.** Income and spending month by month, and one month broken down
+by category, group or merchant. Enter opens the transactions behind a row.
+
+![The Cash Flow screen](docs/screenshots/cashflow.png)
+
+**Reports.** Spending by category across recent months, each cell shaded by
+its size within its row.
+
+![The Reports screen](docs/screenshots/reports.png)
+
+**Budget.** This month's plan from Monarch against what has been earned and
+spent.
+
+![The Budget screen](docs/screenshots/budget.png)
+
+**Recurring.** Bills, subscriptions, transfers and paychecks, found from the
+rhythm of your own history, with when each is next due.
+
+![The Recurring screen](docs/screenshots/recurring.png)
+
+**Investments.** Portfolio value, allocation, and holdings across accounts or
+account by account. Goals, one key before it, tracks what you are saving
+toward.
+
+![The Investments screen](docs/screenshots/investments.png)
+
+**Equity.** Private company holdings from Carta: option grants, shares held,
+the vesting ahead, and what it all comes to at other share prices.
+
+![The Equity screen](docs/screenshots/equity.png)
+
+Enter opens a grant, a holding of shares, an exercise or a tender sale. A
+grant shows its options at each stage, divided between ISO and NSO:
+
+![An option grant opened on the Equity screen](docs/screenshots/equity-grant.png)
+
+The screenshots are taken by [docs/screenshots/tour.tape](docs/screenshots/tour.tape).
+
 ## Quick start
 
 You need Docker with Compose, and Rust (for the terminal app).
@@ -60,7 +133,8 @@ nestegg
 ```
 
 `?` lists every key. `a` swaps names and amounts for stand-ins if you want to
-show someone your screen.
+show someone your screen, and `nestegg --demo` shows a made-up household
+instead of yours.
 
 ## Carta equity (optional)
 

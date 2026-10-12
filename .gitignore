@@ -39,3 +39,7 @@ device-uuid.txt
 # Debug output
 *.png
 *.har
+# ...but the README's screenshots are kept, though not the video VHS records
+# while taking them
+!docs/screenshots/*.png
+docs/screenshots/*.gif
