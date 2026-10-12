@@ -107,7 +107,7 @@ const ACCOUNTS: [AccountSpec; 12] = [
     account("cash-card", "Cash Back Card", "7706", "credit", "Credit Card", "Meridian Bank", -960.0).limit(9_500.0),
     account("retirement", "Larkspur 401(k)", "2254", "brokerage", "401k", "Northfield", 162_000.0),
     account("roth", "Roth IRA", "6138", "brokerage", "Roth IRA", "Granite Investments", 38_500.0),
-    account("brokerage", "Joint Brokerage", "9470", "brokerage", "Brokerage (Taxable)", "Granite Investments", 54_000.0),
+    account("brokerage", "Joint Brokerage", "9470", "brokerage", "Brokerage", "Granite Investments", 54_000.0),
     account("college", "College Savings", "1183", "brokerage", "529 Plan", "Lakeshore 529", 14_200.0),
     account("mortgage", "Home Mortgage", "5562", "loan", "Mortgage", "Harborview Home Loans", -438_600.0)
         .loan(5.625, 2_560.0),
@@ -168,7 +168,7 @@ const RESTAURANTS: &str = "Restaurants & Bars";
 const AUTO_PAYMENT: &str = "Auto Payment";
 const SHOPPING: &str = "Shopping";
 const TRAVEL: &str = "Travel & Vacation";
-const ENTERTAINMENT: &str = "Entertainment & Recreation";
+const ENTERTAINMENT: &str = "Entertainment";
 const SUBSCRIPTIONS: &str = "Subscriptions";
 const PLAIN_TRANSFER: &str = "Transfer";
 const CARD_PAYMENT: &str = "Credit Card Payment";
@@ -306,7 +306,7 @@ struct Paycheck {
 
 const PAYCHECKS_PAID: [Paycheck; 2] = [
     Paycheck { employer: COMPANY, amount: 4_312.18, paid_on: (2024, 1, 5), retirement: 975.0 },
-    Paycheck { employer: "Riverbend School District", amount: 2_468.4, paid_on: (2024, 1, 11), retirement: 0.0 },
+    Paycheck { employer: "Riverbend Schools", amount: 2_468.4, paid_on: (2024, 1, 11), retirement: 0.0 },
 ];
 
 /// What a salary is multiplied by each new year
@@ -904,7 +904,8 @@ impl Household {
                     price: Some(fund.price),
                     value: held().map(|position| position.value).sum(),
                     cost_basis: Some(held().filter_map(|position| position.cost_basis).sum()),
-                    day_change_pct: Some(self.market * fund.market_share * PERCENT),
+                    // A fund the market does not move is flat, not down by nothing
+                    day_change_pct: Some(if fund.market_share == 0.0 { 0.0 } else { self.market * fund.market_share * PERCENT }),
                 }
             })
             .collect();
