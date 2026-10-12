@@ -10,6 +10,7 @@ cargo install --git https://github.com/brandon-tallent/nestegg nestegg --locked
 nestegg --database postgresql://nestegg:PASSWORD@localhost:5432/nestegg
 export DATABASE_URL=postgresql://...   # or set it once
 nestegg --anonymize                    # start with names and amounts swapped for stand-ins
+nestegg --demo                         # a made-up household; needs no database
 ```
 
 Without `--database` or `DATABASE_URL`, the URL is looked up with `kubectl`
@@ -68,16 +69,25 @@ Dashboard, Cash Flow and Reports screens. They are excluded by default, and the
 Cash Flow summary says what was set aside. Tag or untag in Monarch, or with
 `monarch-scraper --tag-transaction ID=One-time`.
 
-`a` toggles anonymized mode for sharing a screenshot: merchants and accounts get
-invented names and every amount is rescaled, consistently enough that charts,
-totals and recurring payments still make sense. Dates, categories and fund
-tickers are unchanged. The disguise is fixed for the session and different on
-the next run.
+`a` toggles anonymized mode for showing your own screen to someone: merchants,
+accounts and funds get invented names, every amount is rescaled, a share of
+the one-off transactions is left out and the rest move a few days later, each
+investment account's balance is dealt afresh among its holdings, and the Equity
+screen shows invented grants worth roughly what yours are. It stays consistent
+enough that charts, totals and recurring payments still make sense. The
+disguise is fixed for the session and different on the next run.
+
+It is a disguise of your data, not a replacement for it: the categories, the
+accounts and how they compare, and the shape of every chart are still yours.
+For a screenshot anyone may see, use `--demo` instead. It shows a household
+that does not exist (two salaries, a mortgage, two credit cards, retirement
+and brokerage accounts, options in a private company) and reads nothing from
+a database. Its history runs up to today, and it is the same on every run.
 
 ## Checking a layout without a terminal
 
 ```bash
-nestegg --anonymize --dump --screen investments --keys "v,j,j" --size 140x40
+nestegg --demo --dump --screen investments --keys "v,j,j" --size 140x40
 ```
 
 renders one frame as plain text after pressing the given keys.

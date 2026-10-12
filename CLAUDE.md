@@ -8,7 +8,7 @@ nestegg pulls financial data into one PostgreSQL database and browses it in a te
 
 1. **Rust CLI** (`/src`) - API client that mirrors Monarch into PostgreSQL
 2. **Browser Automation** (`/browser`) - Playwright-based login that keeps the session cookies fresh
-3. **TUI** (`/tui`) - Standalone ratatui crate (`nestegg`) that reads the Postgres mirror; see `tui/README.md`. Not part of the image build. Check layouts with `nestegg --demo --dump --screen <name> --size 140x40`.
+3. **TUI** (`/tui`) - Standalone ratatui crate (`nestegg`) that reads the Postgres mirror; see `tui/README.md`. Not part of the image build. Check layouts with `nestegg --demo --dump --screen <name> --size 140x40` (`--demo` is a made-up household and needs no database).
 
 ## Build Commands
 
