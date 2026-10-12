@@ -3,6 +3,8 @@
 mod anonymize;
 mod app;
 mod data;
+mod demo;
+mod dice;
 mod equity;
 mod fmt;
 mod payoff;
@@ -17,7 +19,6 @@ use clap::Parser;
 use ratatui::backend::TestBackend;
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::Terminal;
-use sqlx::PgPool;
 use std::process::Command;
 use std::time::Duration;
 
@@ -40,9 +41,14 @@ struct Args {
     #[arg(long, env = "NESTEGG_NAMESPACE", default_value = "nestegg")]
     namespace: String,
 
-    /// Start with names and amounts swapped for stand-ins, for showing the
-    /// interface to others (the `a` key toggles this while running)
-    #[arg(long, alias = "demo")]
+    /// Show a made-up household instead of reading a database: for
+    /// screenshots, and for trying the interface before there is a mirror
+    #[arg(long)]
+    demo: bool,
+
+    /// Start with names and amounts swapped for stand-ins, for showing your
+    /// own screen to others (the `a` key toggles this while running)
+    #[arg(long)]
     anonymize: bool,
 
     /// Screen to open on (dashboard, accounts, transactions, cashflow,
@@ -168,7 +174,8 @@ fn print_streams(data: &data::Data) {
     }
 }
 
-fn run(app: &mut App, pool: &PgPool, runtime: &tokio::runtime::Runtime) -> Result<()> {
+/// Run the interface until quit. `load` reads the data afresh, for a reload.
+fn run(app: &mut App, load: &dyn Fn() -> Result<data::Data>) -> Result<()> {
     let mut terminal = ratatui::init();
     let result = (|| -> Result<()> {
         while !app.quit {
@@ -176,7 +183,7 @@ fn run(app: &mut App, pool: &PgPool, runtime: &tokio::runtime::Runtime) -> Resul
 
             if app.reload_requested {
                 app.reload_requested = false;
-                match runtime.block_on(data::load(pool)) {
+                match load() {
                     Ok(data) => {
                         app.replace_data(data);
                         app.status = "Reloaded".to_string();
@@ -214,16 +221,21 @@ fn main() -> Result<()> {
         );
     };
 
-    let database_url = match args.database {
-        Some(url) => url,
-        None => discover_database_url(&args.namespace)
-            .context("No database given. Pass --database or set DATABASE_URL; looking it up with kubectl failed")?,
+    let load: Box<dyn Fn() -> Result<data::Data>> = if args.demo {
+        Box::new(|| Ok(demo::data(chrono::Utc::now().date_naive())))
+    } else {
+        let database_url = match args.database {
+            Some(url) => url,
+            None => discover_database_url(&args.namespace).context(
+                "No database given. Pass --database or set DATABASE_URL (or try --demo); looking it up with kubectl failed",
+            )?,
+        };
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build()?;
+        let pool = runtime.block_on(data::connect(&database_url))?;
+        Box::new(move || runtime.block_on(data::load(&pool)))
     };
-    let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build()?;
-    let pool = runtime.block_on(data::connect(&database_url))?;
-    let data = runtime.block_on(data::load(&pool))?;
 
-    let mut app = App::new(data);
+    let mut app = App::new(load()?);
     app.screen = screen;
     if args.anonymize {
         app.toggle_anonymized();
@@ -236,5 +248,5 @@ fn main() -> Result<()> {
         press_keys(&mut app, &args.keys)?;
         return dump(&app, &args.size);
     }
-    run(&mut app, &pool, &runtime)
+    run(&mut app, &*load)
 }

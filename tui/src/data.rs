@@ -193,6 +193,8 @@ pub struct Data {
     pub equity: Equity,
     /// Names and amounts have been swapped for stand-ins
     pub anonymized: bool,
+    /// A made-up household (`--demo`), not anyone's records
+    pub demo: bool,
 }
 
 /// Monarch's account type for private company equity

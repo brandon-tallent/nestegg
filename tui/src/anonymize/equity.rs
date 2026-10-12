@@ -8,7 +8,8 @@
 //! (tranches add up to their grant, exercises to the shares held), so the
 //! Equity screen adds up the way it does for real records.
 
-use super::{hash, unit, CENTS_PER_DOLLAR, SCALE_MAX, SCALE_MIN};
+use super::{CENTS_PER_DOLLAR, SCALE_MAX, SCALE_MIN};
+use crate::dice::{hash, Dice};
 use crate::equity::{Certificate, Equity, Exercise, Grant, Issuer, Snapshot, Tender, VestEvent};
 use chrono::{Datelike, Duration, Months, NaiveDate};
 
@@ -117,32 +118,6 @@ const CLIFF_TERMS: &str = "1/4th of the shares vest on the 12-month anniversary 
                            on the same day of each month after.";
 const MONTHLY_SCHEDULE: &str = "1/48 monthly, no cliff";
 const MONTHLY_TERMS: &str = "1/48th of the shares vest on the same day of each month after the vesting start date.";
-
-/// A repeatable run of random draws
-struct Dice {
-    seed: u64,
-    drawn: u64,
-}
-
-impl Dice {
-    fn unit(&mut self) -> f64 {
-        self.drawn += 1;
-        unit(hash(self.seed, &self.drawn.to_string()))
-    }
-
-    fn between(&mut self, (low, high): (f64, f64)) -> f64 {
-        low + self.unit() * (high - low)
-    }
-
-    /// A whole number from `low` to `high`, both included
-    fn whole(&mut self, (low, high): (i64, i64)) -> i64 {
-        low + (self.unit() * (high - low + 1) as f64) as i64
-    }
-
-    fn chance(&mut self, probability: f64) -> bool {
-        self.unit() < probability
-    }
-}
 
 /// One grant as planned: when it was made, how it vests, and how large it is
 /// next to the first
@@ -512,6 +487,15 @@ impl Plan {
     }
 }
 
+/// Holdings drawn from `dice`: `grants` grants, sized so that what has
+/// vested is worth about `worth`
+fn sized(dice: &mut Dice, grants: i64, worth: f64, today: NaiveDate) -> Equity {
+    let plan = Plan::draw(dice, grants, today);
+    let probed = plan.holdings(PROBE_GRANT, today).summary(1.0).vested_value();
+    let first_grant = if worth > 0.0 && probed > 0.0 { PROBE_GRANT * worth / probed } else { DEFAULT_GRANT };
+    plan.holdings(first_grant.min(LARGEST_GRANT), today)
+}
+
 /// Invented holdings in place of `real`, worth about `scale` times as much
 /// (and a factor of their own on top, so the stake cannot be read back from
 /// the rest of the disguise). The same `seed` always invents the same ones.
@@ -519,23 +503,26 @@ pub fn invent(real: &Equity, seed: u64, today: NaiveDate, scale: f64) -> Equity 
     if real.is_empty() {
         return Equity::default();
     }
-    let mut dice = Dice { seed: hash(seed, "equity"), drawn: 0 };
+    let mut dice = Dice::new(hash(seed, "equity"));
     let worth = real.summary(1.0).vested_value() * scale * dice.between((SCALE_MIN, SCALE_MAX));
     // Never the number of grants there really are
     let mut grants = dice.whole((GRANTS_MIN, GRANTS_MAX));
     if grants as usize == real.live_grants().count() {
         grants = if grants == GRANTS_MAX { GRANTS_MIN } else { grants + 1 };
     }
-    let plan = Plan::draw(&mut dice, grants, today);
-
-    // Size the grants so that what is vested comes to what it should
-    let probed = plan.holdings(PROBE_GRANT, today).summary(1.0).vested_value();
-    let first_grant = if worth > 0.0 && probed > 0.0 { PROBE_GRANT * worth / probed } else { DEFAULT_GRANT };
-    let mut equity = plan.holdings(first_grant.min(LARGEST_GRANT), today);
+    let mut equity = sized(&mut dice, grants, worth, today);
     equity.captured_at = real.captured_at;
     if let Some(captured) = real.captured_at {
         equity.issuers.iter_mut().for_each(|issuer| issuer.as_of = Some(captured.date_naive().min(today)));
     }
+    equity
+}
+
+/// Holdings for a household that does not exist: `grants` grants in a
+/// company called `company`, with about `worth` vested
+pub fn fabricate(seed: u64, today: NaiveDate, company: &str, grants: i64, worth: f64) -> Equity {
+    let mut equity = sized(&mut Dice::new(hash(seed, "equity")), grants, worth, today);
+    equity.issuers.iter_mut().for_each(|issuer| issuer.name = company.to_string());
     equity
 }
 
@@ -677,7 +664,7 @@ mod tests {
     fn the_holdings_are_worth_about_what_was_asked_for() {
         let mut close = 0;
         for seed in SEEDS {
-            let mut dice = Dice { seed: hash(seed, "equity"), drawn: 0 };
+            let mut dice = Dice::new(hash(seed, "equity"));
             let worth = 400_000.0 * 0.5 * dice.between((SCALE_MIN, SCALE_MAX));
             let vested = invent(&real(), seed, today(), 0.5).summary(1.0).vested_value();
             close += usize::from((vested / worth - 1.0).abs() < 0.1);

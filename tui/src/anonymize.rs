@@ -8,9 +8,10 @@
 //! name, scaling and move, so charts, totals and recurring payments still
 //! hang together. Categories are left as they are.
 
-mod equity;
+pub mod equity;
 
 use crate::data::{Account, Data, Txn};
+use crate::dice::{hash, unit};
 use chrono::{Duration, NaiveDate};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -153,26 +154,6 @@ fn fund_kinds(asset_class: &str) -> &'static [&'static str] {
             "Conservative Portfolio",
         ],
     }
-}
-
-/// FNV-1a, salted so each session invents different names
-fn hash(seed: u64, text: &str) -> u64 {
-    const OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
-    const PRIME: u64 = 0x0000_0100_0000_01b3;
-    let mut h = OFFSET ^ seed;
-    for byte in text.bytes() {
-        h ^= byte as u64;
-        h = h.wrapping_mul(PRIME);
-    }
-    // Final mix so nearby inputs do not share their high bits
-    h ^= h >> 33;
-    h = h.wrapping_mul(0xff51_afd7_ed55_8ccd);
-    h ^ (h >> 33)
-}
-
-/// A value in `[0, 1)` derived from `hash`
-fn unit(hash: u64) -> f64 {
-    (hash >> 11) as f64 / (1u64 << 53) as f64
 }
 
 /// What tells one security from another: its ticker, or its name when it has none
