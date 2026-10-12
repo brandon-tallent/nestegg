@@ -74,6 +74,11 @@ Sleep 500ms
 Screenshot docs/screenshots/recurring.png
 Sleep 500ms
 
+Type "8"
+Sleep 500ms
+Screenshot docs/screenshots/goals.png
+Sleep 500ms
+
 Type "9"
 Sleep 500ms
 Screenshot docs/screenshots/investments.png
