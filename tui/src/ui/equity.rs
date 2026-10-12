@@ -34,6 +34,9 @@ const CHART_HEIGHT: u16 = 12;
 
 /// Share prices the scenario table values the holdings at, as multiples of today's
 const SCENARIOS: [f64; 5] = [0.5, 1.0, 2.0, 5.0, 10.0];
+/// One column of that table's figures: compact ones, so the price and its
+/// multiple keep the room they need
+const SCENARIO_VALUE_WIDTH: usize = 11;
 
 /// The card that opens over the screen for the selected row
 const DETAIL_WIDTH: u16 = 84;
@@ -533,9 +536,11 @@ fn draw_upcoming(frame: &mut Frame, area: Rect, app: &App) {
     if listed < upcoming.len() {
         let rest = &upcoming[listed..];
         let through = rest.last().map(|v| v.date.format("%b %Y").to_string()).unwrap_or_default();
+        let more = format!("{} more through {}", rest.len(), through);
+        let more_width = DATE_WIDTH + grants_width;
         lines.push(Line::from(vec![
             Span::styled(
-                format!("{:<w$}", format!("{} more dates through {}", rest.len(), through), w = DATE_WIDTH + grants_width),
+                format!("{:<w$}", fmt::trunc(&more, more_width.saturating_sub(1)), w = more_width),
                 theme::muted(),
             ),
             Span::styled(
@@ -561,12 +566,12 @@ fn draw_scenarios(frame: &mut Frame, area: Rect, app: &App) {
         return;
     };
     let width = inner.width as usize;
-    let price_width = width.saturating_sub(VALUE_WIDTH * 3);
+    let price_width = width.saturating_sub(SCENARIO_VALUE_WIDTH * 3);
     let mut lines = vec![Line::from(vec![
         Span::styled(format!("{:<w$}", "Price", w = price_width), theme::header()),
-        Span::styled(format!("{:>w$}", "Vested", w = VALUE_WIDTH), theme::header()),
-        Span::styled(format!("{:>w$}", "Unvested", w = VALUE_WIDTH), theme::header()),
-        Span::styled(format!("{:>w$}", "All", w = VALUE_WIDTH), theme::header()),
+        Span::styled(format!("{:>w$}", "Vested", w = SCENARIO_VALUE_WIDTH), theme::header()),
+        Span::styled(format!("{:>w$}", "Unvested", w = SCENARIO_VALUE_WIDTH), theme::header()),
+        Span::styled(format!("{:>w$}", "All", w = SCENARIO_VALUE_WIDTH), theme::header()),
     ])];
     for factor in SCENARIOS {
         let summary = equity.summary(factor);
@@ -578,9 +583,9 @@ fn draw_scenarios(frame: &mut Frame, area: Rect, app: &App) {
         let style = if factor == 1.0 { theme::bold() } else { theme::text() };
         lines.push(Line::from(vec![
             Span::styled(format!("{:<w$}", fmt::trunc(&label, price_width.saturating_sub(1)), w = price_width), style),
-            Span::styled(format!("{:>w$}", fmt::compact(summary.vested_value()), w = VALUE_WIDTH), style),
-            Span::styled(format!("{:>w$}", fmt::compact(summary.unvested_value), w = VALUE_WIDTH), theme::muted()),
-            Span::styled(format!("{:>w$}", fmt::compact(summary.total_value()), w = VALUE_WIDTH), style),
+            Span::styled(format!("{:>w$}", fmt::compact(summary.vested_value()), w = SCENARIO_VALUE_WIDTH), style),
+            Span::styled(format!("{:>w$}", fmt::compact(summary.unvested_value), w = SCENARIO_VALUE_WIDTH), theme::muted()),
+            Span::styled(format!("{:>w$}", fmt::compact(summary.total_value()), w = SCENARIO_VALUE_WIDTH), style),
         ]));
     }
     frame.render_widget(Paragraph::new(lines), inner);
