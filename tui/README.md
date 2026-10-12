@@ -46,7 +46,7 @@ the marked transactions' merchant; `C` changes their category. Enter reviews
 the change, then Enter applies it to Monarch; Esc cancels. Category choices
 come from Monarch's mirrored category list. Successful updates refresh the
 database and clear their marks; failed updates remain marked. Editing is
-disabled in anonymized mode.
+disabled in anonymized mode and for the demo household.
 
 Esc closes transaction details first, then returns to Accounts, Cash Flow, or
 Recurring when that screen opened a drill-down.

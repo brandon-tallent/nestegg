@@ -98,6 +98,10 @@ impl App {
             self.status = "An update is already in progress".into();
             return;
         }
+        if self.data.demo {
+            self.status = "The demo household is not in Monarch to edit".into();
+            return;
+        }
         if self.data.anonymized {
             self.status = "Leave anonymized mode before editing Monarch".into();
             return;
