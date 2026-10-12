@@ -1,11 +1,14 @@
 //! Swaps real data for plausible stand-ins so a screen can be shared.
 //!
 //! Merchants, accounts and funds get invented names, and every amount is
-//! rescaled. Transactions are thinned out and moved a few days later, and
-//! each investment account's balance is dealt afresh among its holdings. The
+//! rescaled. Transactions are thinned out and moved a few days later, each
+//! investment account's balance is dealt afresh among its holdings, and the
+//! private company holdings are invented outright (see `equity`). The
 //! disguise is consistent: one merchant always maps to the same invented
 //! name, scaling and move, so charts, totals and recurring payments still
 //! hang together. Categories are left as they are.
+
+mod equity;
 
 use crate::data::{Account, Data, Txn};
 use chrono::{Duration, NaiveDate};
@@ -606,45 +609,7 @@ fn disguised(data: &Data, seed: u64, today: NaiveDate) -> Data {
         score.1 = (score.1 + shift).clamp(CREDIT_SCORE_MIN, CREDIT_SCORE_MAX);
     }
 
-    // Equity: share counts take the common scale and prices a factor of their
-    // own, so neither the stake nor the company's valuation can be read back
-    let price_scale = SCALE_MIN + unit(hash(seed, "equity-price")) * (SCALE_MAX - SCALE_MIN);
-    let equity = &mut out.equity;
-    for (i, issuer) in equity.issuers.iter_mut().enumerate() {
-        issuer.name = format!("Private Company {}", i + 1);
-        issuer.fmv = issuer.fmv.map(|v| v * price_scale);
-    }
-    for grant in &mut equity.grants {
-        grant.quantity = (grant.quantity * scale).round();
-        grant.vested = (grant.vested * scale).round();
-        grant.exercised = (grant.exercised * scale).round();
-        grant.exercisable = (grant.exercisable * scale).round();
-        grant.exercise_price *= price_scale;
-    }
-    for event in &mut equity.vesting {
-        event.quantity = (event.quantity * scale).round();
-        event.iso = event.iso.map(|v| (v * scale).round());
-        event.nso = event.nso.map(|v| (v * scale).round());
-    }
-    for certificate in &mut equity.certificates {
-        certificate.quantity = (certificate.quantity * scale).round();
-        certificate.cost = certificate.cost.map(|v| v * scale * price_scale);
-        certificate.fmv_at_issue = certificate.fmv_at_issue.map(|v| v * price_scale);
-    }
-    for exercise in &mut equity.exercises {
-        exercise.quantity = (exercise.quantity * scale).round();
-        exercise.cost *= scale * price_scale;
-        exercise.taxes *= scale * price_scale;
-        exercise.fmv = exercise.fmv.map(|v| v * price_scale);
-    }
-    for (i, tender) in equity.tenders.iter_mut().enumerate() {
-        tender.name = format!("Tender Offer {}", i + 1);
-        tender.shares = (tender.shares * scale).round();
-        tender.proceeds *= scale * price_scale;
-    }
-    for snapshot in &mut equity.snapshots {
-        snapshot.fmv = snapshot.fmv.map(|v| v * price_scale);
-    }
+    out.equity = equity::invent(&data.equity, seed, today, scale);
 
     out.anonymized = true;
     out.derive();
