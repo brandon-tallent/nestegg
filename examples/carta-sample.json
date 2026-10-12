@@ -1,0 +1,1175 @@
+{
+ "captured_at": "2026-10-11T12:00:00.000Z",
+ "portfolio_id": "7",
+ "issuer_ids": [
+  "100"
+ ],
+ "responses": {
+  "/api/investors/portfolio/fund/7/list/": {
+   "status": 200,
+   "body": {
+    "results": {
+     "companies": [
+      {
+       "corporation_id": 100,
+       "name": "Acme Rockets, Inc."
+      }
+     ]
+    }
+   }
+  },
+  "/api/issuers/v1/100/fair-market-value/portfolio/7/": {
+   "status": 200,
+   "body": {
+    "fair_market_value": {
+     "value": {
+      "currency": "USD",
+      "amount": "2.50"
+     }
+    }
+   }
+  },
+  "/api/investors/holdings/portfolio/7/corporation/100/holdings-dashboard/": {
+   "status": 200,
+   "body": {
+    "held_since": "2024-03-15",
+    "cash_cost": 5000.0
+   }
+  },
+  "/api/investors/holdings/portfolio/7/corporation/100/securities/": {
+   "status": 200,
+   "body": {
+    "option_grants": {
+     "holdings": [
+      {
+       "id": 1,
+       "label": "ES-1",
+       "sub_type": "ISO",
+       "quantity": 48000,
+       "issue_ts_ms": 1654041600000,
+       "expiration_ts_ms": 1969574400000,
+       "is_canceled": false,
+       "cumulative_vested_shares": 48000,
+       "exercised_quantity": 10000,
+       "status": "PARTIALLY_EXERCISED",
+       "exercise_price": {
+        "currency": "USD",
+        "amount": "0.50"
+       }
+      },
+      {
+       "id": 2,
+       "label": "ES-2",
+       "sub_type": "ISO",
+       "quantity": 24000,
+       "issue_ts_ms": 1756684800000,
+       "expiration_ts_ms": 2072131200000,
+       "is_canceled": false,
+       "cumulative_vested_shares": 6500,
+       "exercised_quantity": 0,
+       "status": "OUTSTANDING",
+       "exercise_price": {
+        "currency": "USD",
+        "amount": "2.00"
+       }
+      }
+     ]
+    },
+    "certificates": {
+     "holdings": [
+      {
+       "id": 10,
+       "fmv_at_exercise_date": {
+        "currency": "USD",
+        "amount": "1.20"
+       }
+      },
+      {
+       "id": 20,
+       "fmv_at_exercise_date": {
+        "currency": "USD",
+        "amount": "2.40"
+       }
+      },
+      {
+       "id": 21,
+       "fmv_at_exercise_date": {
+        "currency": "USD",
+        "amount": "2.40"
+       }
+      }
+     ]
+    }
+   }
+  },
+  "/api/investors/holdings/portfolio/7/corporation/100/options/": {
+   "status": 200,
+   "body": {
+    "rows": [
+     {
+      "id": 1,
+      "exercisable": 38000,
+      "issuable_type": "ISO/NSO Split",
+      "stock_type": "Common",
+      "is_nso_iso_disqualified": false,
+      "form_83b_to_file_status": "NONE_ELIGIBLE"
+     },
+     {
+      "id": 2,
+      "exercisable": 6500,
+      "issuable_type": "ISO",
+      "stock_type": "Common",
+      "is_nso_iso_disqualified": false,
+      "form_83b_to_file_status": "NONE_ELIGIBLE"
+     }
+    ]
+   }
+  },
+  "/api/corporations/100/option_grant/1/vesting-data/": {
+   "status": 200,
+   "body": {
+    "vesting_start_date": "2022-06-01",
+    "vesting_end_date": "2026-06-01",
+    "has_iso_nso_split": true,
+    "exercise_data": {
+     "early_exercise": false
+    },
+    "vesting_manager": {
+     "name": "1/48 monthly, 1 year cliff",
+     "acceleration": "",
+     "vesting_template": {
+      "cliff_summary": "Yes, 25% vests at 1 year",
+      "description": "1/4th of the shares vest on the 12-month anniversary of the vesting start date, and 1/48th on the same day of each month after."
+     }
+    },
+    "vesting_event_data": [
+     {
+      "date": "2023-06-01",
+      "amount": 12000,
+      "cumulative": 12000,
+      "description": "cliff",
+      "has_vested": true,
+      "iso_amount": 9000,
+      "nso_amount": 3000,
+      "progress_data": {
+       "total_exercised": 10000
+      }
+     },
+     {
+      "date": "2023-07-01",
+      "amount": 1000,
+      "cumulative": 13000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2023-08-01",
+      "amount": 1000,
+      "cumulative": 14000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2023-09-01",
+      "amount": 1000,
+      "cumulative": 15000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2023-10-01",
+      "amount": 1000,
+      "cumulative": 16000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2023-11-01",
+      "amount": 1000,
+      "cumulative": 17000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2023-12-01",
+      "amount": 1000,
+      "cumulative": 18000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2024-01-01",
+      "amount": 1000,
+      "cumulative": 19000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2024-02-01",
+      "amount": 1000,
+      "cumulative": 20000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2024-03-01",
+      "amount": 1000,
+      "cumulative": 21000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2024-04-01",
+      "amount": 1000,
+      "cumulative": 22000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2024-05-01",
+      "amount": 1000,
+      "cumulative": 23000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2024-06-01",
+      "amount": 1000,
+      "cumulative": 24000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2024-07-01",
+      "amount": 1000,
+      "cumulative": 25000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2024-08-01",
+      "amount": 1000,
+      "cumulative": 26000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2024-09-01",
+      "amount": 1000,
+      "cumulative": 27000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2024-10-01",
+      "amount": 1000,
+      "cumulative": 28000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2024-11-01",
+      "amount": 1000,
+      "cumulative": 29000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2024-12-01",
+      "amount": 1000,
+      "cumulative": 30000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2025-01-01",
+      "amount": 1000,
+      "cumulative": 31000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2025-02-01",
+      "amount": 1000,
+      "cumulative": 32000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2025-03-01",
+      "amount": 1000,
+      "cumulative": 33000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2025-04-01",
+      "amount": 1000,
+      "cumulative": 34000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2025-05-01",
+      "amount": 1000,
+      "cumulative": 35000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2025-06-01",
+      "amount": 1000,
+      "cumulative": 36000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2025-07-01",
+      "amount": 1000,
+      "cumulative": 37000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2025-08-01",
+      "amount": 1000,
+      "cumulative": 38000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2025-09-01",
+      "amount": 1000,
+      "cumulative": 39000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2025-10-01",
+      "amount": 1000,
+      "cumulative": 40000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2025-11-01",
+      "amount": 1000,
+      "cumulative": 41000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2025-12-01",
+      "amount": 1000,
+      "cumulative": 42000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2026-01-01",
+      "amount": 1000,
+      "cumulative": 43000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2026-02-01",
+      "amount": 1000,
+      "cumulative": 44000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2026-03-01",
+      "amount": 1000,
+      "cumulative": 45000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2026-04-01",
+      "amount": 1000,
+      "cumulative": 46000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2026-05-01",
+      "amount": 1000,
+      "cumulative": 47000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2026-06-01",
+      "amount": 1000,
+      "cumulative": 48000,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 750,
+      "nso_amount": 250,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     }
+    ]
+   }
+  },
+  "/api/corporations/100/option_grant/2/vesting-data/": {
+   "status": 200,
+   "body": {
+    "vesting_start_date": "2025-09-01",
+    "vesting_end_date": "2029-09-01",
+    "has_iso_nso_split": false,
+    "exercise_data": {
+     "early_exercise": false
+    },
+    "vesting_manager": {
+     "name": "1/48 monthly, 1 year cliff",
+     "acceleration": "",
+     "vesting_template": {
+      "cliff_summary": "Yes, 25% vests at 1 year",
+      "description": "1/4th of the shares vest on the 12-month anniversary of the vesting start date, and 1/48th on the same day of each month after."
+     }
+    },
+    "vesting_event_data": [
+     {
+      "date": "2026-09-01",
+      "amount": 6000,
+      "cumulative": 6000,
+      "description": "cliff",
+      "has_vested": true,
+      "iso_amount": 6000,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2026-10-01",
+      "amount": 500,
+      "cumulative": 6500,
+      "description": "interval",
+      "has_vested": true,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2026-11-01",
+      "amount": 500,
+      "cumulative": 7000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2026-12-01",
+      "amount": 500,
+      "cumulative": 7500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2027-01-01",
+      "amount": 500,
+      "cumulative": 8000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2027-02-01",
+      "amount": 500,
+      "cumulative": 8500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2027-03-01",
+      "amount": 500,
+      "cumulative": 9000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2027-04-01",
+      "amount": 500,
+      "cumulative": 9500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2027-05-01",
+      "amount": 500,
+      "cumulative": 10000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2027-06-01",
+      "amount": 500,
+      "cumulative": 10500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2027-07-01",
+      "amount": 500,
+      "cumulative": 11000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2027-08-01",
+      "amount": 500,
+      "cumulative": 11500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2027-09-01",
+      "amount": 500,
+      "cumulative": 12000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2027-10-01",
+      "amount": 500,
+      "cumulative": 12500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2027-11-01",
+      "amount": 500,
+      "cumulative": 13000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2027-12-01",
+      "amount": 500,
+      "cumulative": 13500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2028-01-01",
+      "amount": 500,
+      "cumulative": 14000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2028-02-01",
+      "amount": 500,
+      "cumulative": 14500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2028-03-01",
+      "amount": 500,
+      "cumulative": 15000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2028-04-01",
+      "amount": 500,
+      "cumulative": 15500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2028-05-01",
+      "amount": 500,
+      "cumulative": 16000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2028-06-01",
+      "amount": 500,
+      "cumulative": 16500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2028-07-01",
+      "amount": 500,
+      "cumulative": 17000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2028-08-01",
+      "amount": 500,
+      "cumulative": 17500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2028-09-01",
+      "amount": 500,
+      "cumulative": 18000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2028-10-01",
+      "amount": 500,
+      "cumulative": 18500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2028-11-01",
+      "amount": 500,
+      "cumulative": 19000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2028-12-01",
+      "amount": 500,
+      "cumulative": 19500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2029-01-01",
+      "amount": 500,
+      "cumulative": 20000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2029-02-01",
+      "amount": 500,
+      "cumulative": 20500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2029-03-01",
+      "amount": 500,
+      "cumulative": 21000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2029-04-01",
+      "amount": 500,
+      "cumulative": 21500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2029-05-01",
+      "amount": 500,
+      "cumulative": 22000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2029-06-01",
+      "amount": 500,
+      "cumulative": 22500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2029-07-01",
+      "amount": 500,
+      "cumulative": 23000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2029-08-01",
+      "amount": 500,
+      "cumulative": 23500,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     },
+     {
+      "date": "2029-09-01",
+      "amount": 500,
+      "cumulative": 24000,
+      "description": "interval",
+      "has_vested": false,
+      "iso_amount": 500,
+      "nso_amount": 0,
+      "progress_data": {
+       "total_exercised": 0
+      }
+     }
+    ]
+   }
+  },
+  "/api/investors/holdings/portfolio/7/corporation/100/shares/?exclude_canceled=False": {
+   "status": 200,
+   "body": {
+    "rows": [
+     {
+      "name": "Common",
+      "securities": [
+       {
+        "id": 10,
+        "label": "CS-10",
+        "issue_date": "03/15/2024",
+        "original_acquisition_date": "03/15/2024",
+        "quantity": 10000,
+        "cost": 5000.0,
+        "status": "Transferred",
+        "is_canceled": true,
+        "exercise_type": "ISO",
+        "exercise_from": "ES-1",
+        "stock_type": "Common",
+        "is_certificated": true
+       },
+       {
+        "id": 20,
+        "label": "CS-20",
+        "issue_date": "12/01/2025",
+        "original_acquisition_date": "03/15/2024",
+        "quantity": 4000,
+        "cost": 0,
+        "status": "Secondary",
+        "is_canceled": true,
+        "exercise_type": null,
+        "exercise_from": null,
+        "stock_type": "Common",
+        "is_certificated": true
+       },
+       {
+        "id": 21,
+        "label": "CS-21",
+        "issue_date": "12/01/2025",
+        "original_acquisition_date": "03/15/2024",
+        "quantity": 6000,
+        "cost": 0,
+        "status": "Outstanding",
+        "is_canceled": false,
+        "exercise_type": null,
+        "exercise_from": null,
+        "stock_type": "Common",
+        "is_certificated": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "/api/exercise/v1/corporation/7/exercise-history/": {
+   "status": 200,
+   "body": [
+    {
+     "grant": {
+      "id": 1,
+      "type": "ISO",
+      "label": "ES-1",
+      "issuer_id": 100
+     },
+     "certificate": {
+      "id": 10,
+      "label": "CS-10"
+     },
+     "exercise_date": 1710460800000,
+     "quantity": "10000.000000000000",
+     "exercise_cost": {
+      "total": {
+       "currency": "USD",
+       "amount": "5000.00"
+      },
+      "total_taxes": {
+       "currency": "USD",
+       "amount": "0.00"
+      }
+     },
+     "exercise_price": {
+      "currency": "USD",
+      "amount": "0.50"
+     },
+     "fair_market_value": {
+      "value": {
+       "currency": "USD",
+       "amount": "1.20"
+      }
+     },
+     "payment_method": "ACH",
+     "exercise_state": "EXERCISED",
+     "is_early_exercise": false
+    }
+   ]
+  },
+  "/corporations/7/tender_offers/historical_tender_offers_api/?page=1": {
+   "status": 200,
+   "body": {
+    "results": [
+     {
+      "id": 5,
+      "corporation_name": "Acme Rockets, Inc.",
+      "name": "Acme Rockets 2025 Tender Offer",
+      "status": "Closed & Settled",
+      "tender_offer_type": "secondary_sale",
+      "start_date": "2025-10-20T07:00:00+00:00",
+      "end_date": "2025-11-17T22:00:00+00:00",
+      "settlement_date": "2025-12-01T08:00:00+00:00",
+      "price": "2.40",
+      "proceeds": 9600.0,
+      "shares_participated": 4000
+     }
+    ]
+   }
+  }
+ }
+}

@@ -1,0 +1,6 @@
+.git
+target
+output
+**/node_modules
+browser/state
+tui

@@ -1,0 +1,41 @@
+# Rust
+target/
+
+# Node.js
+node_modules/
+*.log
+npm-debug.log*
+
+# Browser state (contains sensitive auth data)
+browser/state/
+output/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+browser/carta.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# This machine's own Kubernetes overlay
+k8s-local/
+
+# Secrets
+cookies.txt
+device-uuid.txt
+*.pem
+*.key
+
+# Debug output
+*.png
+*.har

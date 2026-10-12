@@ -1,0 +1,24 @@
+[package]
+name = "nestegg"
+version = "0.1.0"
+edition = "2021"
+description = "Terminal interface over the nestegg personal finance database"
+license = "MIT"
+
+# Standalone crate: kept out of the scraper's dependency graph and image build
+[workspace]
+
+[dependencies]
+# Terminal UI
+ratatui = "0.30"
+
+# Database (read-only access to the mirror)
+sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "chrono"] }
+tokio = { version = "1", features = ["rt"] }
+
+# CLI
+clap = { version = "4", features = ["derive", "env"] }
+
+anyhow = "1"
+chrono = "0.4"
+serde_json = "1"

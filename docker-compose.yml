@@ -1,0 +1,53 @@
+# nestegg backend: the database and the scheduled sync. Copy .env.example to
+# .env first. See README.md.
+name: nestegg
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nestegg
+      POSTGRES_DB: nestegg
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?copy .env.example to .env and set POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      # Local only: this is where the terminal app connects
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nestegg -d nestegg"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  sync:
+    image: ${NESTEGG_IMAGE:-ghcr.io/brandon-tallent/nestegg:latest}
+    build: .
+    restart: unless-stopped
+    command: ["schedule"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://nestegg:${POSTGRES_PASSWORD}@postgres:5432/nestegg
+      MONARCH_EMAIL: ${MONARCH_EMAIL:-}
+      MONARCH_PASSWORD: ${MONARCH_PASSWORD:-}
+      SYNC_INTERVAL_HOURS: ${SYNC_INTERVAL_HOURS:-4}
+      RECONCILE_CREDITS: ${RECONCILE_CREDITS:-false}
+      NTFY_URL: ${NTFY_URL:-}
+      CARTA_EMAIL: ${CARTA_EMAIL:-}
+      CARTA_PASSWORD: ${CARTA_PASSWORD:-}
+      CARTA_MFA_METHOD: ${CARTA_MFA_METHOD:-}
+    volumes:
+      # Session cookies, login codes and the Carta capture
+      - sync-output:/app/output
+      # Saved browser sessions, so a login is only needed once
+      - browser-state:/app/browser/state
+    # Chrome needs more shared memory than the 64MB default
+    shm_size: 1gb
+
+volumes:
+  postgres-data:
+  sync-output:
+  browser-state:

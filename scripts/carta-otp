@@ -1,0 +1,6 @@
+#!/bin/sh
+# Hand a waiting Carta login its two-step verification code
+set -e
+[ -n "$1" ] || { echo "usage: carta-otp CODE" >&2; exit 2; }
+printf '%s\n' "$1" > "${CARTA_OTP_PATH:-${OUTPUT_DIR:-/app/output}/carta-otp.txt}"
+echo "Code handed to the login"

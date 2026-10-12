@@ -1,0 +1,120 @@
+# Monarch Money Scraper CronJob
+# Runs every 4 hours to fetch financial data
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: monarch-sync
+  namespace: nestegg
+  labels:
+    app: monarch-sync
+spec:
+  # Run every 4 hours (00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC)
+  schedule: "0 */4 * * *"
+  # Without this the controller uses the node's local time zone
+  timeZone: "Etc/UTC"
+
+  # Don't allow concurrent runs
+  concurrencyPolicy: Forbid
+
+  # Keep last 3 successful and 1 failed job
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+
+  # Start job within 1 hour of scheduled time or skip
+  startingDeadlineSeconds: 3600
+
+  jobTemplate:
+    spec:
+      # Retry up to 2 times on failure
+      backoffLimit: 2
+
+      # Clean up completed pods after 1 hour
+      ttlSecondsAfterFinished: 3600
+
+      template:
+        metadata:
+          labels:
+            app: monarch-sync
+        spec:
+          restartPolicy: OnFailure
+
+          # Use a security context that works with Playwright
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+
+          containers:
+            - name: scraper
+              image: ghcr.io/brandon-tallent/nestegg:latest
+              imagePullPolicy: Always
+
+              command: ["docker-entrypoint.sh", "scrape"]
+
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: nestegg-secrets
+                      key: DATABASE_URL
+
+                - name: MONARCH_EMAIL
+                  valueFrom:
+                    secretKeyRef:
+                      name: nestegg-secrets
+                      key: MONARCH_EMAIL
+
+                - name: MONARCH_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: nestegg-secrets
+                      key: MONARCH_PASSWORD
+
+                - name: NTFY_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: nestegg-secrets
+                      key: NTFY_URL
+                      optional: true
+
+                # Configuration
+                - name: OUTPUT_DIR
+                  value: /app/output
+
+                # Refile card statement credits under the purchase they refund
+                # "true" refiles card statement credits in Monarch itself so
+                # each nets out against its purchase; this edits your data
+                - name: RECONCILE_CREDITS
+                  value: "false"
+
+                # 0 mirrors the whole history; set a day count for a faster partial sync
+                - name: TRANSACTION_DAYS
+                  value: "0"
+
+                - name: HISTORY_DAYS
+                  value: "0"
+
+              volumeMounts:
+                - name: state
+                  mountPath: /app/output
+                - name: state
+                  mountPath: /app/browser/state
+                  subPath: browser-state
+
+              resources:
+                requests:
+                  memory: "512Mi"
+                  cpu: "250m"
+                limits:
+                  memory: "2Gi"
+                  cpu: "1000m"
+
+          volumes:
+            - name: state
+              persistentVolumeClaim:
+                claimName: scraper-state
+
+          # Optional: Pull from private registry
+          # imagePullSecrets:
+          #   - name: registry-credentials

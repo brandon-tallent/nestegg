@@ -1,0 +1,21 @@
+{
+  "name": "monarch-browser",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "login": "tsx src/login.ts",
+    "refresh": "tsx src/refresh.ts",
+    "scrape": "tsx src/scrape.ts",
+    "carta": "xvfb-run -a tsx src/carta.ts"
+  },
+  "dependencies": {
+    "playwright": "1.64.0",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
+  }
+}

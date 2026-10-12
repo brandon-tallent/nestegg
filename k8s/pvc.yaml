@@ -1,0 +1,16 @@
+# Persistent storage for browser state and cookies
+# This allows session persistence across CronJob runs
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: scraper-state
+  namespace: nestegg
+  labels:
+    app: monarch-sync
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
