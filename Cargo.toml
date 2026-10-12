@@ -2,6 +2,7 @@
 name = "monarch-scraper"
 version = "0.1.0"
 edition = "2021"
+default-run = "monarch-scraper"
 
 [dependencies]
 # HTTP client
@@ -39,3 +40,6 @@ uuid = { version = "1", features = ["v4", "serde"] }
 # Logging
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+
+# Small authenticated write API for the terminal app
+axum = "0.8"

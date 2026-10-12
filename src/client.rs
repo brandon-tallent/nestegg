@@ -672,6 +672,14 @@ impl MonarchClient {
         merchant_name: Option<&str>,
         category_id: Option<&str>,
     ) -> Result<()> {
+        self.update_transaction_confirmed(transaction_id, merchant_name, category_id).await?;
+        Ok(())
+    }
+
+    /// The canonical fields returned by Monarch after an edit, for the write API.
+    pub async fn update_transaction_confirmed(
+        &self, transaction_id: &str, merchant_name: Option<&str>, category_id: Option<&str>,
+    ) -> Result<Value> {
         let mut input = json!({ "id": transaction_id });
         if let Some(name) = merchant_name {
             input["name"] = json!(name);
@@ -689,7 +697,14 @@ impl MonarchClient {
                 data["updateTransaction"]
             );
         }
-        Ok(())
+        if data["updateTransaction"]["errors"].as_array().is_some_and(|errors| !errors.is_empty()) {
+            anyhow::bail!("Monarch reported errors while updating transaction {}", transaction_id);
+        }
+        let transaction = data["updateTransaction"]["transaction"].clone();
+        if transaction["id"].as_str() != Some(transaction_id) {
+            anyhow::bail!("Monarch returned a different transaction after an edit");
+        }
+        Ok(transaction)
     }
 
     /// Delete every rule that renames merchants named exactly `match_name`.

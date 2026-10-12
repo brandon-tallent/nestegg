@@ -53,7 +53,7 @@ FROM mcr.microsoft.com/playwright:v1.64.0-noble
 WORKDIR /app
 
 # Copy Rust binary
-COPY --from=rust-builder /build/target/release/monarch-scraper /usr/local/bin/
+COPY --from=rust-builder /build/target/release/monarch-scraper /build/target/release/nestegg-api /usr/local/bin/
 
 # Copy browser automation
 COPY --from=node-builder /build/browser ./browser

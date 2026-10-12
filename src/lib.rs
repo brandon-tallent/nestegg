@@ -17,3 +17,5 @@ pub mod queries;
 pub use client::MonarchClient;
 pub use config::Config;
 pub use db::Database;
+
+pub mod api;

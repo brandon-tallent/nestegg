@@ -196,6 +196,39 @@ impl Database {
         Ok(changed)
     }
 
+    /// Validate the entire selection before sending any edits to Monarch.
+    pub async fn contains_transactions(&self, ids: &[String]) -> Result<bool> {
+        let count: i64 = sqlx::query_scalar("SELECT count(*) FROM transactions WHERE transaction_id = ANY($1) AND deleted_at IS NULL")
+            .bind(ids).fetch_one(&self.pool).await?;
+        Ok(count as usize == ids.len())
+    }
+
+    /// Store only fields confirmed by Monarch, preserving unrelated raw data.
+    pub async fn mirror_transaction_edit(&self, value: &Value, group: Option<&str>) -> Result<()> {
+        let id = value["id"].as_str().context("Missing transaction id")?;
+        for key in ["merchant", "category"] {
+            if !value[key].is_object() || !value[key]["id"].is_string() || !value[key]["name"].is_string() {
+                anyhow::bail!("Monarch did not return canonical {} fields", key);
+            }
+        }
+        let result = sqlx::query(r#"
+            UPDATE transactions SET
+                merchant_id = $2::jsonb->'merchant'->>'id',
+                merchant_name = $2::jsonb->'merchant'->>'name',
+                category_id = $2::jsonb->'category'->>'id',
+                category_name = $2::jsonb->'category'->>'name',
+                category_group_type = COALESCE($3, category_group_type),
+                raw = COALESCE(raw, '{}'::jsonb) || jsonb_build_object('merchant', $2::jsonb->'merchant',
+                    'category', COALESCE(raw->'category', '{}'::jsonb) || ($2::jsonb->'category') ||
+                        CASE WHEN $3::text IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('group',
+                            COALESCE($2::jsonb->'category'->'group', raw->'category'->'group', '{}'::jsonb) || jsonb_build_object('type', $3::text)) END),
+                last_seen_at = NOW(), changed_at = NOW()
+            WHERE transaction_id = $1 AND deleted_at IS NULL
+        "#).bind(id).bind(value).bind(group).execute(&self.pool).await?;
+        if result.rows_affected() != 1 { anyhow::bail!("Transaction changed in Monarch but is missing from the mirror"); }
+        Ok(())
+    }
+
     /// Upsert transactions into the mirror, along with their tags and merchants
     pub async fn upsert_transactions(&self, run_id: Uuid, transactions: &[Value]) -> Result<()> {
         for batch in transactions.chunks(WRITE_BATCH_SIZE) {
@@ -960,5 +993,32 @@ impl Database {
         .await?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod edit_tests {
+    use super::*;
+    #[tokio::test]
+    async fn confirmed_edits_preserve_other_transaction_fields() {
+        // Use a disposable database only; never point this test at a personal mirror.
+        let Ok(url) = std::env::var("NESTEGG_TEST_DATABASE_URL") else { return; };
+        let db = Database::connect(&url).await.unwrap();
+        let original = serde_json::json!({"notes":"keep this", "amount":-5, "category":{"id":"old", "group":{"id":"old-group","type":"expense"}}, "tags":[{"id":"keep-tag"}]});
+        sqlx::query("INSERT INTO transactions(transaction_id, account_id, date, amount, notes, category_id, category_group_type, raw) VALUES ('api-test', 'test-account', '2026-10-01', -5, 'keep this', 'old', 'expense', $1)")
+            .bind(&original).execute(&db.pool).await.unwrap();
+        let canonical = serde_json::json!({"id":"api-test", "merchant":{"id":"new-merchant","name":"New merchant"}, "category":{"id":"new-category","name":"Income","group":{"id":"new-group","type":"income"}}});
+        db.mirror_transaction_edit(&canonical, Some("income")).await.unwrap();
+        let row = sqlx::query("SELECT merchant_name, category_name, category_group_type, notes, amount::float8 AS amount, raw FROM transactions WHERE transaction_id='api-test'").fetch_one(&db.pool).await.unwrap();
+        use sqlx::Row;
+        assert_eq!(row.get::<String,_>("merchant_name"), "New merchant");
+        assert_eq!(row.get::<String,_>("category_group_type"), "income");
+        assert_eq!(row.get::<String,_>("category_name"), "Income");
+        assert_eq!(row.get::<String,_>("notes"), "keep this");
+        assert_eq!(row.get::<f64,_>("amount"), -5.0);
+        let raw: Value = row.get("raw");
+        assert_eq!(raw["tags"], original["tags"]);
+        assert_eq!(raw["notes"], original["notes"]);
+        assert_eq!(raw["category"]["group"]["id"], "new-group");
     }
 }
