@@ -56,14 +56,14 @@ const FIRST_GRANT_EXERCISES: (i64, i64) = (1, 2);
 const SECOND_GRANT_EXERCISE_CHANCE: f64 = 0.4;
 /// Share of what could be exercised on the day that is
 const EXERCISED_SHARE: (f64, f64) = (0.2, 0.6);
-/// An exercise comes at least this long after the first tranche vests, and
-/// this long before today
-const EXERCISE_DAYS_AFTER_VESTING: i64 = 30;
+/// An exercise comes at least this long after vesting starts, once there is
+/// enough vested to be worth it, and this long before today
+const EXERCISE_MONTHS_AFTER_START: u32 = 13;
 const EXERCISE_DAYS_AGO: i64 = 20;
 /// Tax withheld on exercising NSOs, as a share of the spread
 const WITHHOLDING_RATE: f64 = 0.3;
 
-/// Chance some of the first shares were sold in a tender offer, and how many
+/// Chance some of the largest holding of shares was sold in a tender offer, and how much
 const TENDER_CHANCE: f64 = 0.65;
 const TENDER_SOLD_SHARE: (f64, f64) = (0.2, 0.5);
 /// What a tender pays over the share price of the day
@@ -179,10 +179,6 @@ impl GrantPlan {
 
     fn vesting_date(&self, month: u32) -> NaiveDate {
         self.vesting_start.checked_add_months(Months::new(month)).unwrap_or(self.vesting_start)
-    }
-
-    fn first_vesting(&self) -> NaiveDate {
-        self.vesting_date(self.first_month())
     }
 
     /// The tranches of a grant of `quantity` options, oldest first, as (date,
@@ -323,7 +319,7 @@ impl Plan {
         for (grant, count) in counts.into_iter().enumerate() {
             for _ in 0..count {
                 let (timing, share) = (dice.unit(), dice.between(EXERCISED_SHARE));
-                let earliest = plans[grant].first_vesting() + Duration::days(EXERCISE_DAYS_AFTER_VESTING);
+                let earliest = plans[grant].vesting_date(EXERCISE_MONTHS_AFTER_START);
                 let latest = today - Duration::days(EXERCISE_DAYS_AGO);
                 if earliest <= latest {
                     exercises.push(ExercisePlan { grant, date: between_days(earliest, latest, timing), share });
@@ -412,18 +408,21 @@ impl Plan {
             });
         }
 
-        // A tender buys part of the first shares: Carta cancels their
+        // A tender buys part of the largest holding: Carta cancels its
         // certificate and issues one for what was sold and one for the rest
-        if let (Some(tender), Some(first)) = (&self.tender, equity.certificates.first().cloned()) {
-            let acquired = first.acquired.unwrap_or(today);
+        let largest = (0..equity.certificates.len())
+            .max_by(|a, b| equity.certificates[*a].quantity.total_cmp(&equity.certificates[*b].quantity));
+        if let (Some(tender), Some(index)) = (&self.tender, largest) {
+            let whole = equity.certificates[index].clone();
+            let acquired = whole.acquired.unwrap_or(today);
             let earliest = acquired + Duration::days(TENDER_DAYS_AFTER_EXERCISE);
             let latest = today - Duration::days(TENDER_DAYS_AGO);
-            let sold = round_size(first.quantity * tender.sold_share).min(first.quantity - 1.0);
+            let sold = round_size(whole.quantity * tender.sold_share).min(whole.quantity - 1.0);
             if earliest <= latest && sold >= 1.0 {
                 let settled = between_days(earliest, latest, tender.timing);
                 let price = cents(price_on(&self.prices, settled) * tender.premium);
-                equity.certificates[0].status = CUT.to_string();
-                equity.certificates[0].canceled = true;
+                equity.certificates[index].status = CUT.to_string();
+                equity.certificates[index].canceled = true;
                 let piece = |quantity: f64, status: &str| Certificate {
                     issued: Some(settled),
                     fmv_at_issue: Some(price_on(&self.prices, settled)),
@@ -434,10 +433,10 @@ impl Plan {
                     canceled: status == SOLD,
                     exercise_type: String::new(),
                     exercised_from: String::new(),
-                    ..first.clone()
+                    ..whole.clone()
                 };
                 equity.certificates.push(piece(sold, SOLD));
-                equity.certificates.push(piece(first.quantity - sold, HELD));
+                equity.certificates.push(piece(whole.quantity - sold, HELD));
                 equity.tenders.push(Tender {
                     name: format!("{} Tender Offer", settled.year()),
                     status: TENDER_SETTLED.to_string(),
