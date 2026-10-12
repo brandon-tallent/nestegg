@@ -26,8 +26,10 @@ const FULL_GRANTS_MIN_WIDTH: usize = 84;
 
 /// Rows of headline figures above the panels
 const SUMMARY_HEIGHT: u16 = 5;
-/// How many of the latest share prices the summary lists
+/// How many of the latest share prices the summary lists, at most
 const MAX_PRICES_SHOWN: usize = 6;
+const PRICES_LABEL: &str = " Share price ";
+const PRICE_ARROW: &str = "  →  ";
 const CHART_HEIGHT: u16 = 12;
 
 /// Share prices the scenario table values the holdings at, as multiples of today's
@@ -196,17 +198,34 @@ fn draw_summary(frame: &mut Frame, area: Rect, app: &App) {
     }
     exercise.push(Span::styled("    pre-tax", theme::muted()));
 
-    // The share price as the records show it changing
-    let mut prices = vec![Span::styled(" Share price ", theme::muted())];
-    let history = equity.price_history();
-    let shown = &history[history.len().saturating_sub(MAX_PRICES_SHOWN)..];
-    for (i, (date, value)) in shown.iter().enumerate() {
+    // The share price as the records show it changing: the latest, and as
+    // many of those before it as the line has room for
+    let mut prices = vec![Span::styled(PRICES_LABEL, theme::muted())];
+    let history: Vec<(String, String)> = equity
+        .price_history()
+        .iter()
+        .map(|(date, value)| (price(*value), format!(" {}", date.format("%b %Y"))))
+        .collect();
+    let mut room = (area.width as usize).saturating_sub(PRICES_LABEL.chars().count());
+    let mut first = history.len();
+    while first > 0 && history.len() - first < MAX_PRICES_SHOWN {
+        let (value, when) = &history[first - 1];
+        let arrow = if first < history.len() { PRICE_ARROW.chars().count() } else { 0 };
+        let needed = value.chars().count() + when.chars().count() + arrow;
+        if needed > room {
+            break;
+        }
+        room -= needed;
+        first -= 1;
+    }
+    let shown = &history[first..];
+    for (i, (value, when)) in shown.iter().enumerate() {
         if i > 0 {
-            prices.push(Span::styled("  →  ", theme::muted()));
+            prices.push(Span::styled(PRICE_ARROW, theme::muted()));
         }
         let last = i + 1 == shown.len();
-        prices.push(Span::styled(price(*value), if last { theme::text() } else { theme::muted() }));
-        prices.push(Span::styled(format!(" {}", date.format("%b %Y")), theme::muted()));
+        prices.push(Span::styled(value.clone(), if last { theme::text() } else { theme::muted() }));
+        prices.push(Span::styled(when.clone(), theme::muted()));
     }
     frame.render_widget(
         Paragraph::new(vec![Line::from(company), Line::from(values), Line::from(exercise), Line::from(prices)]),
