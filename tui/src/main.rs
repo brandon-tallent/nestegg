@@ -11,13 +11,16 @@ mod payoff;
 mod forecast;
 mod search;
 mod theme;
+mod mouse;
+mod edits;
 mod ui;
 
 use anyhow::{bail, Context, Result};
 use app::{App, Screen};
 use clap::Parser;
 use ratatui::backend::TestBackend;
-use ratatui::crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use ratatui::crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, EnableMouseCapture, DisableMouseCapture};
+use ratatui::crossterm::execute;
 use ratatui::Terminal;
 use std::process::Command;
 use std::time::Duration;
@@ -177,8 +180,46 @@ fn print_streams(data: &data::Data) {
 /// Run the interface until quit. `load` reads the data afresh, for a reload.
 fn run(app: &mut App, load: &dyn Fn() -> Result<data::Data>) -> Result<()> {
     let mut terminal = ratatui::init();
+    let previous_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let _ = execute!(std::io::stdout(), DisableMouseCapture);
+        previous_hook(info);
+    }));
+    let mut mouse_capture = false;
+    let mut edit_task: Option<std::sync::mpsc::Receiver<Result<edits::Outcome, String>>> = None;
     let result = (|| -> Result<()> {
+        execute!(std::io::stdout(), EnableMouseCapture)?;
+        mouse_capture = true;
         while !app.quit {
+            if let Some(job) = app.edit_job.take() {
+                let (sender, receiver) = std::sync::mpsc::channel();
+                std::thread::spawn(move || { let _ = sender.send(edits::apply(job)); });
+                edit_task = Some(receiver);
+            }
+            if let Some(task) = &edit_task {
+                let completed = match task.try_recv() {
+                    Ok(result) => Some(result),
+                    Err(std::sync::mpsc::TryRecvError::Disconnected) => Some(Err("Update worker stopped; reload before retrying".into())),
+                    Err(std::sync::mpsc::TryRecvError::Empty) => None,
+                };
+                if let Some(result) = completed {
+                    app.edit_busy = false;
+                    let message = match result {
+                        Ok(outcome) => {
+                            let updated = outcome.results.iter().filter(|r| r.updated).count();
+                            for row in &outcome.results { if row.updated { app.marked.remove(&row.id); } }
+                            let error = outcome.results.iter().find_map(|r| r.error.as_deref());
+                            format!("{updated}/{} updated in Monarch{}", outcome.results.len(), error.map(|e| format!("; {e}")).unwrap_or_default())
+                        }
+                        Err(error) => error,
+                    };
+                    match load() {
+                        Ok(data) => { app.replace_data(data); app.status = message; }
+                        Err(_) => app.status = format!("{message}; database reload failed"),
+                    }
+                    edit_task = None;
+                }
+            }
             terminal.draw(|frame| ui::draw(frame, app))?;
 
             if app.reload_requested {
@@ -193,22 +234,27 @@ fn run(app: &mut App, load: &dyn Fn() -> Result<data::Data>) -> Result<()> {
                 continue;
             }
 
-            if event::poll(TICK)? {
-                if let Event::Key(key) = event::read()? {
-                    if key.kind == KeyEventKind::Press {
+            if event::poll(if edit_task.is_some() { Duration::from_millis(100) } else { TICK })? {
+                match event::read()? {
+                    Event::Mouse(mouse) => app.handle_mouse(mouse),
+                    Event::Key(key) if key.kind == KeyEventKind::Press => {
                         app.status.clear();
                         app.handle_key(key);
                         if app.reload_requested {
                             app.status = "Reloading…".to_string();
                         }
                     }
+                    _ => {}
                 }
             }
         }
         Ok(())
     })();
+    let cleanup = if mouse_capture {
+        execute!(std::io::stdout(), DisableMouseCapture)
+    } else { Ok(()) };
     ratatui::restore();
-    result
+    result.and(cleanup.map_err(Into::into))
 }
 
 fn main() -> Result<()> {

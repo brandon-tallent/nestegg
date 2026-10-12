@@ -194,7 +194,9 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
     }
     // The column header stays put while the rest scrolls
     let body_height = (inner.height as usize).saturating_sub(1);
-    let scroll = app.budget_scroll.min(lines.len().saturating_sub(1 + body_height));
+    let max_scroll = lines.len().saturating_sub(1 + body_height);
+    let scroll = app.budget_scroll.min(max_scroll);
+    crate::mouse::scroll(app, inner, None, Some((scroll, max_scroll)));
     let mut shown = vec![lines[0].clone()];
     shown.extend(lines.into_iter().skip(1 + scroll).take(body_height));
     frame.render_widget(Paragraph::new(shown), inner);

@@ -665,6 +665,7 @@ impl Household {
         let amount = cents(amount);
         self.balances[account] += amount;
         self.transactions.push(Txn {
+            id: format!("demo-{:06}", self.transactions.len() + 1),
             date,
             amount,
             credited: 0.0,

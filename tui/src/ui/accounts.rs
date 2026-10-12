@@ -87,6 +87,7 @@ fn draw_list(frame: &mut Frame, area: Rect, app: &App) {
     // Group headers are lines but not selectable, so track which line each account lands on
     let mut lines: Vec<Line> = Vec::new();
     let mut selected_line = 0;
+    let mut row_lines = Vec::new();
     let mut previous_kind: Option<&str> = None;
     for (i, account) in accounts.iter().enumerate() {
         if previous_kind != Some(account.kind.as_str()) {
@@ -108,6 +109,7 @@ fn draw_list(frame: &mut Frame, area: Rect, app: &App) {
         if i == app.account_selected {
             selected_line = lines.len();
         }
+        row_lines.push((lines.len(), i));
         lines.push(account_line(account, width, i == app.account_selected));
     }
 
@@ -116,6 +118,12 @@ fn draw_list(frame: &mut Frame, area: Rect, app: &App) {
         return;
     }
     let (start, end) = widgets::window(selected_line, lines.len(), inner.height as usize);
+    crate::mouse::scroll(app, inner, None, None);
+    for (line, index) in row_lines {
+        if (start..end).contains(&line) {
+            crate::mouse::row(app, Rect::new(inner.x, inner.y + (line - start) as u16, inner.width, 1), index, None);
+        }
+    }
     frame.render_widget(Paragraph::new(lines[start..end].to_vec()), inner);
 }
 

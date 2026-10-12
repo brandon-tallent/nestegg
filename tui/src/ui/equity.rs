@@ -263,6 +263,7 @@ fn draw_grants(frame: &mut Frame, area: Rect, app: &App) {
     }
     let fmv = |grant: &Grant| equity.issuer(grant.issuer_id).and_then(|i| i.fmv).unwrap_or(0.0);
     let (mut exercisable, mut unvested, mut value) = (0.0, 0.0, 0.0);
+    crate::mouse::rows(app, Rect::new(inner.x, inner.y.saturating_add(1), inner.width, inner.height.saturating_sub(1)), 0, grants.len().min(inner.height.saturating_sub(1) as usize), Some(EquityView::Grants));
     for (index, grant) in grants.iter().enumerate() {
         let spread = (fmv(grant) - grant.exercise_price).max(0.0);
         let worth = grant.exercisable * spread;
@@ -309,6 +310,7 @@ fn draw_shares(frame: &mut Frame, area: Rect, app: &App) {
     let today = app.data.today();
     let certificates = certificates(app);
     let selected = selected_in(app, EquityView::Shares);
+    crate::mouse::key(app, Rect::new(area.x, area.y, area.width, 1), ratatui::crossterm::event::KeyCode::Char('v'));
     let block = card_with_note("Shares Held", Line::styled("v: exercises and sales ", theme::muted()));
     let inner = block.inner(area);
     frame.render_widget(block, area);
@@ -334,6 +336,7 @@ fn draw_shares(frame: &mut Frame, area: Rect, app: &App) {
         return;
     }
     let (start, end) = widgets::window(selected.unwrap_or(0), certificates.len(), rows_area.height as usize);
+    crate::mouse::rows(app, rows_area, start, end, Some(EquityView::Shares));
     let lines: Vec<Line> = certificates[start..end]
         .iter()
         .enumerate()
@@ -427,6 +430,7 @@ fn draw_history(frame: &mut Frame, area: Rect, app: &App) {
         return;
     }
     let (start, end) = widgets::window(app.equity_selected, events.len(), rows_area.height as usize);
+    crate::mouse::rows(app, rows_area, start, end, Some(EquityView::History));
     let lines: Vec<Line> = events[start..end]
         .iter()
         .enumerate()
@@ -715,6 +719,7 @@ fn draw_detail(frame: &mut Frame, area: Rect, app: &App) {
         },
     };
     let popup = widgets::centered(area, DETAIL_WIDTH, lines.len() as u16 + 2);
+    crate::mouse::modal(app, frame.area(), popup);
     frame.render_widget(Clear, popup);
     let block = card_with_note(&title, Line::styled("esc: close ", theme::muted()));
     frame.render_widget(Paragraph::new(lines).block(block), popup);

@@ -39,6 +39,7 @@ pub struct Account {
 
 #[derive(Debug, Clone)]
 pub struct Txn {
+    pub id: String,
     pub date: NaiveDate,
     pub amount: f64,
     /// Statement credits matched to this purchase (positive), so its true
@@ -371,7 +372,7 @@ pub async fn load(pool: &PgPool) -> Result<Data> {
 
     let rows = sqlx::query(
         r#"
-        SELECT t.date,
+        SELECT t.transaction_id, t.date,
                t.amount::float8 AS amount,
                COALESCE((SELECT sum(o.amount) FROM credit_offsets o
                          WHERE o.purchase_transaction_id = t.transaction_id), 0)::float8 AS credited,
@@ -401,6 +402,7 @@ pub async fn load(pool: &PgPool) -> Result<Data> {
     data.transactions = rows
         .iter()
         .map(|r| Txn {
+            id: r.get("transaction_id"),
             date: r.get("date"),
             amount: r.get("amount"),
             credited: r.get("credited"),

@@ -32,6 +32,7 @@ const HELP_WIDTH: u16 = 76;
 
 pub fn draw(frame: &mut Frame, app: &App) {
     let area = frame.area();
+    app.mouse.borrow_mut().clear();
     let main = if area.width >= SIDEBAR_MIN_WIDTH {
         let [sidebar, main] =
             Layout::horizontal([Constraint::Length(SIDEBAR_WIDTH), Constraint::Min(0)]).areas(area);
@@ -60,7 +61,10 @@ pub fn draw(frame: &mut Frame, app: &App) {
     }
     draw_footer(frame, footer, app);
 
+    if app.editor.is_some() { transactions::draw_edit(frame, area, app); }
+
     if app.show_help {
+        crate::mouse::modal(app, area, Rect::default());
         draw_help(frame, area);
     }
 }
@@ -96,6 +100,7 @@ fn draw_sidebar(frame: &mut Frame, area: Rect, app: &App) {
         Line::from(""),
     ];
     for screen in Screen::ALL.iter() {
+        crate::mouse::region(app, Rect::new(inner.x, inner.y + lines.len() as u16, inner.width, 1).intersection(inner), crate::mouse::Action::Screen(*screen));
         let active = *screen == app.screen;
         let bar = if active { "▌" } else { " " };
         let style = if active { theme::accent() } else { theme::text() };
@@ -138,6 +143,13 @@ fn draw_tabs(frame: &mut Frame, area: Rect, app: &App) {
             spans.push(Span::styled(format!(" {}{} ", screen.key(), short), theme::muted()));
         }
     }
+    let mut x = area.x;
+    for (index, span) in spans.iter().enumerate() {
+        if index > 0 {
+            crate::mouse::region(app, Rect::new(x, area.y, span.width() as u16, 1).intersection(area), crate::mouse::Action::Screen(Screen::ALL[index - 1]));
+        }
+        x += span.width() as u16;
+    }
     frame.render_widget(Line::from(spans), area);
 }
 
@@ -164,6 +176,8 @@ fn draw_header(frame: &mut Frame, area: Rect, app: &App) {
             left.push(Span::styled("  esc clears", theme::muted()));
         }
     }
+    if !app.marked.is_empty() { left.push(Span::styled(format!("  {} marked", app.marked.len()), theme::accent())); }
+    if app.edit_busy { left.push(Span::styled("  Applying to Monarch…", theme::accent())); }
     if !app.status.is_empty() {
         left.push(Span::styled(format!("  {}", app.status), Style::new().fg(theme::YELLOW)));
     }
@@ -177,6 +191,10 @@ fn draw_header(frame: &mut Frame, area: Rect, app: &App) {
             Span::styled(" ] ", theme::muted()),
         ])
         .right_aligned();
+        let width = range.width() as u16;
+        let x = area.right().saturating_sub(width);
+        crate::mouse::key(app, Rect::new(x, area.y, width / 2, 1).intersection(area), ratatui::crossterm::event::KeyCode::Char('['));
+        crate::mouse::key(app, Rect::new(x + width / 2, area.y, width - width / 2, 1).intersection(area), ratatui::crossterm::event::KeyCode::Char(']'));
         frame.render_widget(range, area);
     }
 }
@@ -185,7 +203,7 @@ fn draw_footer(frame: &mut Frame, area: Rect, app: &App) {
     let specific: &[(&str, &str)] = match app.screen {
         Screen::Dashboard => &[("/", "search"), ("[ ]", "range"), ("o", "one-time")],
         Screen::Accounts => &[("/", "search"), ("⏎", "transactions"), ("h", "hidden"), ("[ ]", "range")],
-        Screen::Transactions => &[("/", "search"), ("f", "filter"), ("⏎", "details"), ("c", "clear")],
+        Screen::Transactions => &[("/", "search"), ("t", "mark"), ("m", "merchant"), ("C", "category"), ("⏎", "details"), ("f", "filter"), ("c", "clear")],
         Screen::CashFlow => &[("/", "search"), ("←→", "month"), ("b", "breakdown"), ("o", "one-time"), ("⏎", "transactions")],
         Screen::Reports => &[("/", "search"), ("↑↓", "scroll"), ("o", "one-time")],
         Screen::Budget => &[("/", "search"), ("↑↓", "scroll")],
@@ -198,6 +216,9 @@ fn draw_footer(frame: &mut Frame, area: Rect, app: &App) {
 
     let mut spans = vec![Span::raw(" ")];
     for (key, label) in specific.iter().chain(general.iter()) {
+        let x = area.x + spans.iter().map(|s| s.width() as u16).sum::<u16>();
+        let width = key.chars().count() as u16 + label.chars().count() as u16 + 1;
+        crate::mouse::footer(app, Rect::new(x, area.y, width, 1).intersection(area), key);
         spans.push(Span::styled(*key, Style::new().fg(theme::TEXT).add_modifier(Modifier::BOLD)));
         spans.push(Span::styled(format!(" {}   ", label), theme::muted()));
     }
@@ -208,6 +229,7 @@ fn draw_help(frame: &mut Frame, area: Rect) {
     let rows: &[(&str, &str)] = &[
         ("1-9, 0, Tab", "Switch screen"),
         ("↑ ↓ / j k", "Move selection or scroll"),
+        ("Mouse", "Click to select, double-click to open; wheel to scroll"),
         ("PgUp PgDn, g G", "Page, jump to top or bottom"),
         ("[ ]", "Shorter or longer chart range"),
         ("r", "Reload from the database"),
@@ -223,7 +245,9 @@ fn draw_help(frame: &mut Frame, area: Rect) {
         ("  /", "Searches merchant, category, account, notes, tags, date"),
         ("  f", "Cycle filter (review, pending, income, …)"),
         ("  Enter", "Transaction details"),
-        ("  c, Esc", "Clear search and filters"),
+        ("  c, Esc", "Clear filters; Esc returns from a drill-down"),
+        ("  t / T / u", "Mark a row / mark all visible / unmark all"),
+        ("  m / C", "Change marked merchants / categories in Monarch"),
         ("Cash Flow", ""),
         ("  ← → / h l", "Previous or next month"),
         ("  b", "Break down by category, group, merchant"),

@@ -140,6 +140,7 @@ fn quantity_text(quantity: f64) -> String {
 }
 
 fn draw_holdings(frame: &mut Frame, area: Rect, app: &App) {
+    crate::mouse::key(app, Rect::new(area.x, area.y, area.width, 1), ratatui::crossterm::event::KeyCode::Char('v'));
     let block = card_with_note("Holdings", Line::styled("v: by account ", theme::muted()));
     let inner = block.inner(area);
     frame.render_widget(block, area);
@@ -172,6 +173,7 @@ fn draw_holdings(frame: &mut Frame, area: Rect, app: &App) {
         return;
     }
     let (start, end) = widgets::window(app.invest_selected, holdings.len(), rows_area.height as usize);
+    crate::mouse::rows(app, rows_area, start, end, None);
     let lines: Vec<Line> = holdings[start..end]
         .iter()
         .enumerate()
@@ -208,6 +210,7 @@ fn draw_holdings(frame: &mut Frame, area: Rect, app: &App) {
 }
 
 fn draw_positions(frame: &mut Frame, area: Rect, app: &App) {
+    crate::mouse::key(app, Rect::new(area.x, area.y, area.width, 1), ratatui::crossterm::event::KeyCode::Char('v'));
     let block = card_with_note("Positions by Account", Line::styled("v: by holding ", theme::muted()));
     let inner = block.inner(area);
     frame.render_widget(block, area);
@@ -220,6 +223,7 @@ fn draw_positions(frame: &mut Frame, area: Rect, app: &App) {
     let positions = app.listed_positions();
     let mut lines: Vec<Line> = Vec::new();
     let mut selected_line = 0;
+    let mut row_lines = Vec::new();
     let mut previous_account: Option<&str> = None;
     for (i, p) in positions.iter().enumerate() {
         if previous_account != Some(p.account_id.as_str()) {
@@ -262,6 +266,7 @@ fn draw_positions(frame: &mut Frame, area: Rect, app: &App) {
         spans.push(gain_span(p.value, p.cost_basis));
         spans.push(Span::styled(format!("{:>w$}", fmt::money0(p.value), w = VALUE_WIDTH), theme::text()));
         let line = Line::from(spans);
+        row_lines.push((lines.len(), i));
         lines.push(if i == app.invest_selected { line.style(theme::selected()) } else { line });
     }
 
@@ -270,5 +275,11 @@ fn draw_positions(frame: &mut Frame, area: Rect, app: &App) {
         return;
     }
     let (start, end) = widgets::window(selected_line, lines.len(), inner.height as usize);
+    crate::mouse::scroll(app, inner, None, None);
+    for (line, index) in row_lines {
+        if (start..end).contains(&line) {
+            crate::mouse::row(app, Rect::new(inner.x, inner.y + (line - start) as u16, inner.width, 1), index, None);
+        }
+    }
     frame.render_widget(Paragraph::new(lines[start..end].to_vec()), inner);
 }

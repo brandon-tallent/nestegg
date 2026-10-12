@@ -614,6 +614,7 @@ mod tests {
 
     fn txn(merchant: &str, amount: f64, group_type: &str) -> Txn {
         Txn {
+            id: format!("{merchant}-{amount}"),
             date: date(2026, 9, 1),
             amount,
             credited: 0.0,

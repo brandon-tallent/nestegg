@@ -198,6 +198,7 @@ fn draw_breakdown(frame: &mut Frame, area: Rect, app: &App, income: bool) {
     let selected = if income { usize::MAX } else { app.cash_selected };
     let (start, end) = widgets::window(app.cash_selected.min(rows.len() - 1), rows.len(), inner.height as usize);
     let (start, end) = if income { (0, rows.len().min(inner.height as usize)) } else { (start, end) };
+    if !income { crate::mouse::rows(app, inner, start, end, None); }
     let lines: Vec<Line> = rows[start..end]
         .iter()
         .enumerate()

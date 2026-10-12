@@ -22,3 +22,7 @@ clap = { version = "4", features = ["derive", "env"] }
 anyhow = "1"
 chrono = "0.4"
 serde_json = "1"
+
+# Write requests run on a worker thread so the UI stays responsive
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }

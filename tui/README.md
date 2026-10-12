@@ -1,7 +1,9 @@
 # nestegg, the terminal app
 
 A terminal interface over the Postgres mirror that the sync in this repo maintains.
-It is read-only: it never talks to Monarch or Carta, only to the database.
+It reads the mirrored database. Optional merchant/category edits go through the
+authenticated [write API](../docs/WRITE_API.md) on the machine that maintains
+the Monarch session; the terminal app never receives that session.
 
 ```bash
 cargo install --git https://github.com/brandon-tallent/nestegg nestegg --locked
@@ -32,6 +34,22 @@ cluster node. `--namespace` picks another namespace.
 | 8 | Goals | Savings goals |
 | 9 | Investments | Portfolio value, allocation, holdings, and positions by account (`v`) |
 | 0 | Equity | Private company holdings from Carta: option grants, shares held, vesting ahead, exercises and sales, and value at other share prices; `v` moves between the lists, Enter opens the selection |
+
+Mouse: click the sidebar or tabs to switch screens, click rows to select,
+double-click to open, and use the wheel to scroll. Footer controls are clickable.
+Click outside a detail dialog, or its close control, to dismiss it.
+
+On Transactions, `t` marks/unmarks a row (`T` marks every visible row, `u`
+unmarks all). Clicking the row's leftmost marker does the same. Marks stay
+attached to transaction IDs when you search, filter, or reload. `m` changes
+the marked transactions' merchant; `C` changes their category. Enter reviews
+the change, then Enter applies it to Monarch; Esc cancels. Category choices
+come from Monarch's mirrored category list. Successful updates refresh the
+database and clear their marks; failed updates remain marked. Editing is
+disabled in anonymized mode.
+
+Esc closes transaction details first, then returns to Accounts, Cash Flow, or
+Recurring when that screen opened a drill-down.
 
 `?` lists every key. `[` and `]` change the chart range; `r` re-reads the database.
 

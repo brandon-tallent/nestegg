@@ -81,7 +81,9 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
     // Header and three summary rows are pinned; categories scroll beneath them
     const PINNED_ROWS: usize = 5;
     let body_height = (inner.height as usize).saturating_sub(PINNED_ROWS);
-    let scroll = app.reports_scroll.min(rows.len().saturating_sub(body_height));
+    let max_scroll = rows.len().saturating_sub(body_height);
+    let scroll = app.reports_scroll.min(max_scroll);
+    crate::mouse::scroll(app, inner, None, Some((scroll, max_scroll)));
 
     let mut lines = vec![
         Line::from(header),

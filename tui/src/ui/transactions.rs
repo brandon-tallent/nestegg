@@ -1,6 +1,6 @@
 //! Transactions: the full history, searchable and filterable
 
-use super::widgets::{self, card};
+use super::widgets::{self, card, card_with_note};
 use crate::app::App;
 use crate::data::Txn;
 use crate::fmt;
@@ -113,10 +113,16 @@ fn draw_table(frame: &mut Frame, area: Rect, app: &App) {
 
     let this_year = app.data.today().year();
     let (start, end) = widgets::window(app.tx.selected, app.tx.visible.len(), rows_area.height as usize);
+    crate::mouse::rows(app, rows_area, start, end, None);
+    for index in start..end {
+        crate::mouse::region(app, Rect::new(rows_area.x, rows_area.y + (index - start) as u16, 2.min(rows_area.width), 1), crate::mouse::Action::ToggleRow(index));
+    }
     let lines: Vec<Line> = (start..end)
         .filter_map(|row| app.tx.visible.get(row).map(|i| (row, &app.data.transactions[*i])))
         .map(|(row, txn)| {
-            let flag = if txn.needs_review {
+            let flag = if app.marked.contains(&txn.id) {
+                Span::styled("✓ ", theme::accent())
+            } else if txn.needs_review {
                 Span::styled("● ", theme::accent())
             } else if txn.pending {
                 Span::styled("◌ ", theme::muted())
@@ -207,11 +213,41 @@ fn draw_detail(frame: &mut Frame, area: Rect, app: &App, txn: &Txn) {
     }
 
     let popup = widgets::centered(area, DETAIL_WIDTH, lines.len() as u16 + 2);
+    crate::mouse::modal(app, frame.area(), popup);
     frame.render_widget(Clear, popup);
     frame.render_widget(
         Paragraph::new(lines)
             .wrap(ratatui::widgets::Wrap { trim: false })
-            .block(card("Transaction")),
+            .block(card_with_note("Transaction", Line::styled("esc: close ", theme::muted()))),
         popup,
     );
+}
+
+pub fn draw_edit(frame: &mut Frame, area: Rect, app: &App) {
+    let Some(dialog) = &app.editor else { return; };
+    let popup = widgets::centered(area, 72, 16);
+    crate::mouse::modal(app, area, popup);
+    let block = card(&format!("{} · {} marked transactions", dialog.field.label(), dialog.ids.len()));
+    let inner = block.inner(popup);
+    frame.render_widget(Clear, popup);
+    let mut lines = vec![Line::styled(if dialog.confirm { "Apply this change to Monarch?" } else { "Enter the new value:" }, theme::bold()), Line::from("")];
+    lines.push(Line::styled(format!("{}{}", dialog.input, if dialog.confirm { "" } else { "▏" }), theme::accent()));
+    lines.push(Line::from(""));
+    if dialog.confirm {
+        lines.push(Line::styled("Only the marked transactions will change.", theme::text()));
+        lines.push(Line::styled("Their confirmed values will refresh in the local database.", theme::muted()));
+    } else {
+        let suggestions = app.edit_suggestions();
+        let start = dialog.suggestion.saturating_sub(3).min(suggestions.len().saturating_sub(7));
+        for (index, name) in suggestions.iter().enumerate().skip(start).take(7) {
+            let row = lines.len() as u16;
+            crate::mouse::region(app, Rect::new(inner.x, inner.y + row, inner.width, 1).intersection(inner), crate::mouse::Action::EditSuggestion(index));
+            lines.push(Line::styled(name.clone(), if index == dialog.suggestion { theme::selected() } else { theme::text() }));
+        }
+    }
+    let buttons = Rect::new(inner.x, inner.bottom().saturating_sub(1), inner.width, 1);
+    frame.render_widget(Paragraph::new(lines), inner);
+    frame.render_widget(Line::from(vec![Span::styled(if dialog.confirm { " Enter: Apply " } else { " Enter: Review " }, theme::accent()), Span::styled("    Esc: Cancel ", theme::muted())]), buttons);
+    crate::mouse::key(app, Rect::new(buttons.x, buttons.y, 16.min(buttons.width), 1), ratatui::crossterm::event::KeyCode::Enter);
+    crate::mouse::key(app, Rect::new(buttons.x + 16.min(buttons.width), buttons.y, buttons.width.saturating_sub(16), 1), ratatui::crossterm::event::KeyCode::Esc);
 }

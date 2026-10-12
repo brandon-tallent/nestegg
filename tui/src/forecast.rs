@@ -517,6 +517,7 @@ mod tests {
 
     fn txn(date: NaiveDate, merchant: &str, amount: f64) -> Txn {
         Txn {
+            id: format!("{merchant}-{amount}"),
             date,
             amount,
             credited: 0.0,

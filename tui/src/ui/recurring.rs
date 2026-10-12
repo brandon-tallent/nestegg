@@ -126,6 +126,7 @@ pub fn draw(frame: &mut Frame, area: Rect, app: &App) {
         return;
     }
     let (start, end) = widgets::window(app.recurring_selected, rows.len(), rows_area.height as usize);
+    crate::mouse::rows(app, rows_area, start, end, None);
     let lines: Vec<Line> = rows[start..end]
         .iter()
         .enumerate()

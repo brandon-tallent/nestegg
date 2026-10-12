@@ -224,7 +224,7 @@ pub enum EquityView {
     History,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct TxState {
     pub selected: usize,
     pub search: String,
@@ -261,6 +261,8 @@ pub struct App {
     /// Fixed for the session so repeated screenshots agree with each other
     disguise_seed: u64,
     pub screen: Screen,
+    pub mouse: std::cell::RefCell<crate::mouse::HitMap>,
+    pub last_click: Option<(crate::mouse::Action, std::time::Instant)>,
     pub range: Range,
     pub show_help: bool,
     /// Keystrokes are going into the current screen's search
@@ -278,6 +280,12 @@ pub struct App {
 
     pub account_selected: usize,
     pub tx: TxState,
+    /// Screen that opened the current transaction drill-down.
+    pub tx_return: Option<(Screen, TxState)>,
+    pub marked: std::collections::BTreeSet<String>,
+    pub editor: Option<crate::edits::Dialog>,
+    pub edit_job: Option<crate::edits::Job>,
+    pub edit_busy: bool,
     /// Index into `Data::months`
     pub cash_month: usize,
     pub breakdown: Breakdown,
@@ -304,6 +312,8 @@ impl App {
             real: None,
             disguise_seed,
             screen: Screen::Dashboard,
+            mouse: Default::default(),
+            last_click: None,
             range: Range::ThreeMonths,
             show_help: false,
             searching: false,
@@ -315,6 +325,11 @@ impl App {
             status: String::new(),
             account_selected: 0,
             tx: TxState::default(),
+            tx_return: None,
+            marked: Default::default(),
+            editor: None,
+            edit_job: None,
+            edit_busy: false,
             cash_month: 0,
             breakdown: Breakdown::Category,
             cash_selected: 0,
@@ -333,6 +348,7 @@ impl App {
 
     /// Swap in freshly loaded data, keeping the user's place where possible
     pub fn replace_data(&mut self, data: Data) {
+        let previous_month = self.cash_flow_month();
         if self.real.is_some() {
             self.data = crate::anonymize::anonymize(&data, self.disguise_seed);
             self.real = Some(data);
@@ -340,6 +356,7 @@ impl App {
             self.data = data;
         }
         self.after_load();
+        if let Some(index) = previous_month.and_then(|month| self.data.months.iter().position(|m| m.month == month)) { self.cash_month = index; }
     }
 
     /// Switch between the real data and a disguised copy safe to share
@@ -515,7 +532,12 @@ impl App {
     }
 
     /// Open Transactions restricted to an account
+    fn begin_transaction_drilldown(&mut self) {
+        self.tx_return = Some((self.screen, std::mem::take(&mut self.tx)));
+    }
+
     fn open_account_transactions(&mut self, account_id: String) {
+        self.begin_transaction_drilldown();
         self.clear_tx_filters();
         self.tx.account = Some(account_id);
         self.refilter();
@@ -523,7 +545,7 @@ impl App {
     }
 
     /// Number of rows in the list the current screen scrolls
-    fn list_len(&self) -> usize {
+    pub(crate) fn list_len(&self) -> usize {
         match self.screen {
             Screen::Accounts => self.listed_accounts().len(),
             Screen::Transactions => self.tx.visible.len(),
@@ -540,7 +562,7 @@ impl App {
         }
     }
 
-    fn cursor(&mut self) -> Option<&mut usize> {
+    pub(crate) fn cursor(&mut self) -> Option<&mut usize> {
         Some(match self.screen {
             Screen::Accounts => &mut self.account_selected,
             Screen::Transactions => &mut self.tx.selected,
@@ -554,7 +576,7 @@ impl App {
         })
     }
 
-    fn move_cursor(&mut self, delta: isize) {
+    pub(crate) fn move_cursor(&mut self, delta: isize) {
         let len = self.list_len();
         if let Some(cursor) = self.cursor() {
             let last = len.saturating_sub(1) as isize;
@@ -571,7 +593,9 @@ impl App {
         }
     }
 
-    fn switch_screen(&mut self, screen: Screen) {
+    pub(crate) fn switch_screen(&mut self, screen: Screen) {
+        self.tx_return = None;
+        self.last_click = None;
         self.screen = screen;
         self.tx.detail = false;
         self.equity_detail = false;
@@ -579,6 +603,10 @@ impl App {
     }
 
     pub fn handle_key(&mut self, key: KeyEvent) {
+        if self.edit_busy && (matches!(key.code, KeyCode::Char('q') | KeyCode::Char('a')) || (key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL))) {
+            self.status = "Wait for the Monarch update to finish".into(); return;
+        }
+        if self.editor.is_some() { self.handle_edit_key(key); return; }
         if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
             self.quit = true;
             return;
@@ -682,6 +710,11 @@ impl App {
                 _ => {}
             },
             Screen::Transactions => match key.code {
+                KeyCode::Char('t') => self.mark_transaction(),
+                KeyCode::Char('T') => { for index in &self.tx.visible { self.marked.insert(self.data.transactions[*index].id.clone()); } }
+                KeyCode::Char('u') => self.marked.clear(),
+                KeyCode::Char('m') => self.begin_edit(crate::edits::Field::Merchant),
+                KeyCode::Char('C') => self.begin_edit(crate::edits::Field::Category),
                 KeyCode::Char('f') => {
                     self.tx.filter_index = (self.tx.filter_index + 1) % TxFilter::ALL.len();
                     self.tx.selected = 0;
@@ -692,6 +725,11 @@ impl App {
                 KeyCode::Esc => {
                     if self.tx.detail {
                         self.tx.detail = false;
+                    } else if let Some((screen, previous)) = self.tx_return.take() {
+                        self.tx = previous;
+                        self.refilter();
+                        self.screen = screen;
+                        self.searching = false;
                     } else if self.tx.has_filters() {
                         self.clear_tx_filters();
                     }
@@ -742,6 +780,7 @@ impl App {
                         .get(self.recurring_selected)
                         .map(|row| (row.stream.merchant.clone(), row.stream.account_id.clone()));
                     if let Some((merchant, account_id)) = selected {
+                        self.begin_transaction_drilldown();
                         self.clear_tx_filters();
                         self.tx.search = merchant;
                         self.tx.account = Some(account_id);
@@ -760,6 +799,7 @@ impl App {
         let Some(name) = rows.get(self.cash_selected).map(|row| row.0.clone()) else {
             return;
         };
+        self.begin_transaction_drilldown();
         let month = self.cash_flow_month();
         let breakdown = self.breakdown;
         self.clear_tx_filters();
@@ -800,4 +840,42 @@ fn account_kind_rank(kind: &str) -> usize {
         "valuables",
     ];
     ORDER.iter().position(|k| *k == kind).unwrap_or(ORDER.len())
+}
+
+#[cfg(test)]
+mod navigation_tests {
+    use super::*;
+    fn key(app: &mut App, code: KeyCode) { app.handle_key(KeyEvent::new(code, KeyModifiers::NONE)); }
+    #[test]
+    fn escape_closes_detail_then_returns_to_the_origin() {
+        for origin in [Screen::CashFlow, Screen::Accounts, Screen::Recurring] {
+            let mut app = App::new(Data::default());
+            app.screen = origin;
+            app.tx.search = "previous transaction query".into();
+            app.cash_selected = 3;
+            app.account_selected = 2;
+            app.begin_transaction_drilldown();
+            app.screen = Screen::Transactions;
+            app.tx.category = Some("Coffee Shops".into());
+            app.tx.detail = true;
+            key(&mut app, KeyCode::Esc);
+            assert_eq!(app.screen, Screen::Transactions);
+            assert!(!app.tx.detail);
+            key(&mut app, KeyCode::Esc);
+            assert_eq!(app.screen, origin);
+            assert_eq!(app.cash_selected, 3);
+            assert_eq!(app.account_selected, 2);
+            assert_eq!(app.tx.search, "previous transaction query");
+        }
+    }
+    #[test]
+    fn explicit_navigation_does_not_keep_a_stale_back_target() {
+        let mut app = App::new(Data::default());
+        app.screen = Screen::CashFlow;
+        app.begin_transaction_drilldown();
+        app.switch_screen(Screen::Transactions);
+        key(&mut app, KeyCode::Esc);
+        assert_eq!(app.screen, Screen::Transactions);
+        assert!(app.tx_return.is_none());
+    }
 }
