@@ -59,6 +59,7 @@ async fn main() -> Result<()> {
         || !config.split_transaction.is_empty()
         || !config.delete_merchant_rule.is_empty()
         || !config.limit_category_rule.is_empty()
+        || !config.statement_category_rule.is_empty()
     {
         return edit_merchants(&config, &client).await;
     }
@@ -401,6 +402,34 @@ async fn edit_merchants(config: &Config, client: &MonarchClient) -> Result<()> {
                 .ok_or_else(|| anyhow::anyhow!("No account named '{}'", account))?;
             let changed = client.limit_category_rules(match_name, account_id).await?;
             info!(match_name, account, changed, "Limited category rules to one account");
+        }
+    }
+    if !config.statement_category_rule.is_empty() {
+        let (_, categories) = client.fetch_categories().await?;
+        let accounts = client.fetch_accounts().await?;
+        let account_id = match config.rule_account.as_deref() {
+            Some(account) => Some(
+                accounts
+                    .items
+                    .iter()
+                    .find(|a| a.display_name.as_deref().is_some_and(|n| n.eq_ignore_ascii_case(account)))
+                    .map(|a| a.id.as_str())
+                    .ok_or_else(|| anyhow::anyhow!("No account named '{}'", account))?,
+            ),
+            None => None,
+        };
+        for argument in &config.statement_category_rule {
+            let (statement, name) = split_pair(argument, "--statement-category-rule", "STATEMENT=CATEGORY")?;
+            let category_id = categories
+                .iter()
+                .find(|c| c["name"].as_str().is_some_and(|n| n.eq_ignore_ascii_case(name)))
+                .and_then(|c| c["id"].as_str())
+                .ok_or_else(|| anyhow::anyhow!("No category named '{}'", name))?;
+            if client.create_statement_category_rule(statement, category_id, account_id).await? {
+                info!(statement, category = name, "Created statement rule");
+            } else {
+                info!(statement, "Rule already exists, skipping");
+            }
         }
     }
     Ok(())

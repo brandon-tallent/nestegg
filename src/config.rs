@@ -167,6 +167,17 @@ pub struct Config {
     #[arg(long, value_name = "MATCH=ACCOUNT")]
     pub limit_category_rule: Vec<String>,
 
+    /// Create a Monarch rule so future transactions whose bank statement text
+    /// is exactly STATEMENT are filed under CATEGORY, as STATEMENT=CATEGORY
+    /// NAME. Repeatable. Skipped when a rule already matches STATEMENT; no
+    /// scrape is run.
+    #[arg(long, value_name = "STATEMENT=CATEGORY")]
+    pub statement_category_rule: Vec<String>,
+
+    /// With --statement-category-rule, apply the rules to this account only
+    #[arg(long, value_name = "ACCOUNT")]
+    pub rule_account: Option<String>,
+
     /// Ntfy notification URL for success/failure alerts
     #[arg(long, env = "NTFY_URL")]
     pub ntfy_url: Option<String>,

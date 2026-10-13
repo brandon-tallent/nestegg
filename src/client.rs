@@ -698,6 +698,47 @@ impl MonarchClient {
         Ok(changed)
     }
 
+    /// Create a rule that files future transactions whose bank statement text
+    /// is exactly `statement` under the category `category_id`, on one account
+    /// when `account_id` is given. Existing transactions are left alone.
+    /// Returns false, creating nothing, when a rule already matches that text.
+    pub async fn create_statement_category_rule(
+        &self, statement: &str, category_id: &str, account_id: Option<&str>,
+    ) -> Result<bool> {
+        let mut data = self
+            .execute_raw("Web_GetTransactionRules", GET_TRANSACTION_RULES_QUERY, json!({}))
+            .await?;
+        let wanted = statement.to_lowercase();
+        let exists = take_array(&mut data, "/transactionRules")?
+            .iter()
+            .filter_map(|rule| rule["originalStatementCriteria"].as_array())
+            .flatten()
+            .any(|c| c["value"].as_str().is_some_and(|v| v.to_lowercase() == wanted));
+        if exists {
+            return Ok(false);
+        }
+        let mut input = json!({
+            "originalStatementCriteria": [{ "operator": RULE_OPERATOR_EQUALS, "value": wanted }],
+            "setCategoryAction": category_id,
+            "applyToExistingTransactions": false,
+        });
+        if let Some(id) = account_id {
+            input["accountIds"] = json!([id]);
+        }
+        let result = self
+            .execute_raw(
+                "Common_CreateTransactionRuleMutationV2",
+                CREATE_TRANSACTION_RULE_MUTATION,
+                json!({ "input": input }),
+            )
+            .await?;
+        let errors = &result["createTransactionRuleV2"]["errors"];
+        if !errors.is_null() {
+            anyhow::bail!("Monarch rejected the rule for '{}': {}", statement, errors);
+        }
+        Ok(true)
+    }
+
     /// Merchants whose name matches `search`, as (id, name, transaction count).
     /// Includes merchants no transaction uses, which the mirror never sees.
     pub async fn search_merchants(&self, search: &str) -> Result<Vec<(String, String, i64)>> {
