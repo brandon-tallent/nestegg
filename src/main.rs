@@ -60,6 +60,7 @@ async fn main() -> Result<()> {
         || !config.delete_merchant_rule.is_empty()
         || !config.limit_category_rule.is_empty()
         || !config.statement_category_rule.is_empty()
+        || !config.account_transactions.is_empty()
     {
         return edit_merchants(&config, &client).await;
     }
@@ -429,6 +430,20 @@ async fn edit_merchants(config: &Config, client: &MonarchClient) -> Result<()> {
                 info!(statement, category = name, "Created statement rule");
             } else {
                 info!(statement, "Rule already exists, skipping");
+            }
+        }
+    }
+    if !config.account_transactions.is_empty() {
+        let accounts = client.fetch_accounts().await?;
+        for account in &config.account_transactions {
+            let account_id = accounts
+                .items
+                .iter()
+                .find(|a| a.display_name.as_deref().is_some_and(|n| n.eq_ignore_ascii_case(account)))
+                .map(|a| a.id.as_str())
+                .ok_or_else(|| anyhow::anyhow!("No account named '{}'", account))?;
+            for transaction in client.fetch_account_transactions(account_id).await? {
+                println!("{}", transaction);
             }
         }
     }

@@ -178,6 +178,13 @@ pub struct Config {
     #[arg(long, value_name = "ACCOUNT")]
     pub rule_account: Option<String>,
 
+    /// Print every transaction of the named account as JSON, one per line,
+    /// straight from Monarch. Works for accounts whose transactions are
+    /// hidden from reports, which the mirror does not hold. Repeatable; no
+    /// scrape is run.
+    #[arg(long, value_name = "ACCOUNT")]
+    pub account_transactions: Vec<String>,
+
     /// Ntfy notification URL for success/failure alerts
     #[arg(long, env = "NTFY_URL")]
     pub ntfy_url: Option<String>,

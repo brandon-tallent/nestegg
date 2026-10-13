@@ -24,6 +24,8 @@ const HISTORY_EPOCH: &str = "2000-01-01";
 
 /// Rule criterion operator for an exact match, as Monarch's rules store it
 const RULE_OPERATOR_EQUALS: &str = "eq";
+/// Transaction filter value that also returns transactions hidden from reports
+const VISIBILITY_ALL: &str = "all_transactions";
 
 /// Which stored document a response belongs to
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -316,6 +318,36 @@ impl MonarchClient {
             Some(date) => json!({ "startDate": date.format("%Y-%m-%d").to_string() }),
             None => json!({}),
         };
+        self.fetch_filtered_transactions_page(filters, limit, offset).await
+    }
+
+    /// Every transaction of one account, as Monarch returns them. Unlike the
+    /// unfiltered list, this includes accounts whose transactions are hidden
+    /// from reports (investment and loan accounts, usually).
+    pub async fn fetch_account_transactions(&self, account_id: &str) -> Result<Vec<Value>> {
+        let mut raw = Vec::new();
+        loop {
+            let (page, total) = self
+                .fetch_filtered_transactions_page(
+                    json!({ "accounts": [account_id], "transactionVisibility": VISIBILITY_ALL }),
+                    TRANSACTIONS_PAGE_SIZE,
+                    raw.len(),
+                )
+                .await?;
+            let fetched_count = page.len();
+            raw.extend(page);
+            if fetched_count < TRANSACTIONS_PAGE_SIZE || raw.len() as i64 >= total {
+                return Ok(raw);
+            }
+        }
+    }
+
+    async fn fetch_filtered_transactions_page(
+        &self,
+        filters: Value,
+        limit: usize,
+        offset: usize,
+    ) -> Result<(Vec<Value>, i64)> {
 
         let mut data = self
             .execute_raw(
