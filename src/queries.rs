@@ -1087,6 +1087,25 @@ mutation Common_CreateTransactionRuleMutationV2($input: CreateTransactionRuleInp
 }
 "#;
 
+/// Change an existing transaction rule; the input replaces the whole rule
+pub const UPDATE_TRANSACTION_RULE_MUTATION: &str = r#"
+mutation Common_UpdateTransactionRuleMutationV2($input: UpdateTransactionRuleInput!) {
+  updateTransactionRuleV2(input: $input) {
+    errors {
+      fieldErrors {
+        field
+        messages
+        __typename
+      }
+      message
+      code
+      __typename
+    }
+    __typename
+  }
+}
+"#;
+
 /// Search the household's merchants by name
 pub const SEARCH_MERCHANTS_QUERY: &str = r#"
 query Web_GetMerchantSettingsPage($offset: Int, $orderBy: MerchantOrdering, $search: String, $filters: MerchantFilters) {

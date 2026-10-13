@@ -161,6 +161,12 @@ pub struct Config {
     #[arg(long, value_name = "MATCH=TARGET")]
     pub merchant_rule: Vec<String>,
 
+    /// Limit the rule that sets merchant MATCH's category to one account, as
+    /// MATCH=ACCOUNT NAME, so it stops catching the same merchant name
+    /// elsewhere. Repeatable; no scrape is run.
+    #[arg(long, value_name = "MATCH=ACCOUNT")]
+    pub limit_category_rule: Vec<String>,
+
     /// Ntfy notification URL for success/failure alerts
     #[arg(long, env = "NTFY_URL")]
     pub ntfy_url: Option<String>,

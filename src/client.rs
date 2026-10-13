@@ -643,6 +643,61 @@ impl MonarchClient {
         Ok(())
     }
 
+    /// Limit every rule that only sets the category of merchants named exactly
+    /// `match_name` to the account `account_id`, so the same merchant name on
+    /// another account (a card payment named after the card) is left alone.
+    /// Existing transactions are not touched. Returns how many rules changed.
+    pub async fn limit_category_rules(&self, match_name: &str, account_id: &str) -> Result<usize> {
+        let mut data = self
+            .execute_raw("Web_GetTransactionRules", GET_TRANSACTION_RULES_QUERY, json!({}))
+            .await?;
+        let wanted = match_name.to_lowercase();
+        let rules = take_array(&mut data, "/transactionRules")?;
+        let mut changed = 0;
+        for rule in &rules {
+            let criteria = rule["merchantCriteria"].as_array().map(Vec::as_slice).unwrap_or_default();
+            let matches = criteria.iter().any(|c| {
+                c["operator"] == RULE_OPERATOR_EQUALS && c["value"].as_str().is_some_and(|v| v.to_lowercase() == wanted)
+            });
+            // The update replaces the whole rule, so only touch the plain shape
+            // this can rebuild exactly: one merchant, one category, nothing else
+            let plain = criteria.len() == 1
+                && ["setMerchantAction", "addTagsAction", "amountCriteria", "categoryIds", "accountIds",
+                    "originalStatementCriteria", "merchantNameCriteria", "reviewStatusAction"]
+                    .iter()
+                    .all(|field| rule[*field].is_null());
+            let (Some(id), Some(category_id)) = (rule["id"].as_str(), rule["setCategoryAction"]["id"].as_str()) else {
+                continue;
+            };
+            if !matches || !plain {
+                continue;
+            }
+            let result = self
+                .execute_raw(
+                    "Common_UpdateTransactionRuleMutationV2",
+                    UPDATE_TRANSACTION_RULE_MUTATION,
+                    json!({
+                        "input": {
+                            "id": id,
+                            "merchantCriteriaUseOriginalStatement": rule["merchantCriteriaUseOriginalStatement"],
+                            "merchantCriteria": [{ "operator": RULE_OPERATOR_EQUALS, "value": wanted }],
+                            "accountIds": [account_id],
+                            "setCategoryAction": category_id,
+                            "setHideFromReportsAction": rule["setHideFromReportsAction"],
+                            "applyToExistingTransactions": false,
+                        }
+                    }),
+                )
+                .await?;
+            let errors = &result["updateTransactionRuleV2"]["errors"];
+            if !errors.is_null() {
+                anyhow::bail!("Monarch rejected the change to rule {}: {}", id, errors);
+            }
+            changed += 1;
+        }
+        Ok(changed)
+    }
+
     /// Merchants whose name matches `search`, as (id, name, transaction count).
     /// Includes merchants no transaction uses, which the mirror never sees.
     pub async fn search_merchants(&self, search: &str) -> Result<Vec<(String, String, i64)>> {

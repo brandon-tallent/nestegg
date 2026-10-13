@@ -58,6 +58,7 @@ async fn main() -> Result<()> {
         || !config.untag_transaction.is_empty()
         || !config.split_transaction.is_empty()
         || !config.delete_merchant_rule.is_empty()
+        || !config.limit_category_rule.is_empty()
     {
         return edit_merchants(&config, &client).await;
     }
@@ -386,6 +387,20 @@ async fn edit_merchants(config: &Config, client: &MonarchClient) -> Result<()> {
             client.create_merchant_rule(match_name, target_name).await?;
             existing.push(match_name.to_lowercase());
             info!(match_name, target_name, "Created merchant rule");
+        }
+    }
+    if !config.limit_category_rule.is_empty() {
+        let accounts = client.fetch_accounts().await?;
+        for argument in &config.limit_category_rule {
+            let (match_name, account) = split_pair(argument, "--limit-category-rule", "MATCH=ACCOUNT")?;
+            let account_id = accounts
+                .items
+                .iter()
+                .find(|a| a.display_name.as_deref().is_some_and(|n| n.eq_ignore_ascii_case(account)))
+                .map(|a| a.id.as_str())
+                .ok_or_else(|| anyhow::anyhow!("No account named '{}'", account))?;
+            let changed = client.limit_category_rules(match_name, account_id).await?;
+            info!(match_name, account, changed, "Limited category rules to one account");
         }
     }
     Ok(())
