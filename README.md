@@ -1,9 +1,8 @@
 # nestegg
 
-nestegg copies your [Monarch Money](https://www.monarch.com) data into a
-Postgres database on your own machine and gives you a terminal app for looking
-through it. It can also pull in your stock options and shares from
-[Carta](https://carta.com).
+nestegg syncs [Monarch Money](https://www.monarch.com) & [Carta](https://carta.com)
+data into a local postgres database and gives you a [terminal app](tui/README.md)
+for looking through it.
 
 <p align="center">
   <a href="docs/screenshots/dashboard.png"><img src="docs/screenshots/dashboard.png" width="32%" alt="Dashboard"></a>
@@ -20,17 +19,6 @@ through it. It can also pull in your stock options and shares from
   <a href="docs/screenshots/equity-grant.png"><img src="docs/screenshots/equity-grant.png" width="32%" alt="An option grant"></a>
 </p>
 
-Click a screenshot to see it full size. They all show the demo, which runs on
-made-up data, so you can try the app before setting anything up:
-
-```bash
-cargo install --git https://github.com/brandon-tallent/nestegg nestegg --locked
-nestegg --demo
-```
-
-The number keys switch screens, `/` searches, and `?` lists the other keys.
-[tui/README.md](tui/README.md) covers the app in detail.
-
 ## Setup
 
 You need Docker with Compose for the sync, and Rust for the terminal app.
@@ -38,7 +26,7 @@ You need Docker with Compose for the sync, and Rust for the terminal app.
 ```bash
 git clone https://github.com/brandon-tallent/nestegg && cd nestegg
 cp .env.example .env
-# in .env, set POSTGRES_PASSWORD (openssl rand -hex 16), MONARCH_EMAIL and MONARCH_PASSWORD
+# in .env, set POSTGRES_PASSWORD, MONARCH_EMAIL and MONARCH_PASSWORD
 docker compose up -d
 ```
 
@@ -62,9 +50,6 @@ export DATABASE_URL=postgresql://nestegg:YOUR_POSTGRES_PASSWORD@localhost:5432/n
 nestegg
 ```
 
-If you want to show someone your screen, press `a` first. It swaps names and
-amounts for invented ones.
-
 ## Carta
 
 If you have options or shares on Carta, add `CARTA_EMAIL` and `CARTA_PASSWORD`
@@ -78,18 +63,6 @@ docker compose exec sync carta-otp 123456
 
 That fills in the Equity screen (`0`). It isn't on a schedule, so run it again
 when you want fresh numbers.
-
-## Day to day
-
-```bash
-docker compose logs -f sync                  # see what the sync is doing
-docker compose run --rm sync scrape          # sync now
-docker compose pull && docker compose up -d  # update
-docker compose exec postgres pg_dump -U nestegg nestegg | gzip > nestegg-backup.sql.gz
-```
-
-Updates don't need a migration step. The sync applies the schema every time it
-starts.
 
 ## Settings
 
@@ -133,8 +106,6 @@ Carta account, load the made-up capture in `examples/`:
 ```bash
 docker compose run --rm -v "$PWD/examples:/examples:ro" sync cli --load-carta /examples/carta-sample.json
 ```
-
-The screenshots are taken with `vhs docs/screenshots/tour.tape`.
 
 ## License
 
