@@ -21,8 +21,6 @@ for looking through it.
 
 ## Setup
 
-You need Docker with Compose for the sync, and Rust for the terminal app.
-
 ```bash
 git clone https://github.com/brandon-tallent/nestegg && cd nestegg
 cp .env.example .env
