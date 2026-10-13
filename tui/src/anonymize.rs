@@ -631,6 +631,7 @@ mod tests {
             recurring: true,
             needs_review: false,
             hide_from_reports: false,
+            hidden_by_account: false,
             one_time: false,
         }
     }

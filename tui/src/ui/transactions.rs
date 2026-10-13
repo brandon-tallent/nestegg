@@ -185,7 +185,8 @@ fn draw_detail(frame: &mut Frame, area: Rect, app: &App, txn: &Txn) {
         (txn.pending, "pending"),
         (txn.needs_review, "needs review"),
         (txn.recurring, "recurring"),
-        (txn.hide_from_reports, "hidden from reports"),
+        (txn.hide_from_reports && !txn.hidden_by_account, "hidden from reports"),
+        (txn.hidden_by_account, "in an account hidden from reports"),
         (txn.one_time, "one-time"),
     ] {
         if set {

@@ -59,6 +59,9 @@ pub struct Txn {
     pub recurring: bool,
     pub needs_review: bool,
     pub hide_from_reports: bool,
+    /// Belongs to an account whose transactions Monarch hides from reports (a
+    /// 401k, a brokerage, a loan), so it is also left out of the bill forecast
+    pub hidden_by_account: bool,
     /// Tagged in Monarch as an exceptional item (a tax settlement, a share
     /// sale) that should not count toward everyday income and spending
     pub one_time: bool,
@@ -392,7 +395,8 @@ pub async fn load(pool: &PgPool) -> Result<Data> {
                COALESCE(t.pending, false) AS pending,
                COALESCE(t.is_recurring, false) AS recurring,
                COALESCE(t.needs_review, false) AS needs_review,
-               COALESCE(t.hide_from_reports, false) AS hide_from_reports
+               COALESCE(t.hide_from_reports, false) OR COALESCE(t.hidden_by_account, false) AS hide_from_reports,
+               COALESCE(t.hidden_by_account, false) AS hidden_by_account
         FROM latest_transactions t
         ORDER BY t.date DESC, t.monarch_created_at DESC NULLS LAST, t.transaction_id
         "#,
@@ -418,6 +422,7 @@ pub async fn load(pool: &PgPool) -> Result<Data> {
             recurring: r.get("recurring"),
             needs_review: r.get("needs_review"),
             hide_from_reports: r.get("hide_from_reports"),
+            hidden_by_account: r.get("hidden_by_account"),
             one_time: r.get::<String, _>("tags").split(", ").any(|tag| tag.eq_ignore_ascii_case(ONE_TIME_TAG)),
         })
         .collect();

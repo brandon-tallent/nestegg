@@ -314,10 +314,12 @@ impl MonarchClient {
         limit: usize,
         offset: usize,
     ) -> Result<(Vec<Value>, i64)> {
-        let filters = match since {
-            Some(date) => json!({ "startDate": date.format("%Y-%m-%d").to_string() }),
-            None => json!({}),
-        };
+        // Without an explicit visibility Monarch leaves out every account
+        // whose transactions are hidden from reports (investments, loans)
+        let mut filters = json!({ "transactionVisibility": VISIBILITY_ALL });
+        if let Some(date) = since {
+            filters["startDate"] = json!(date.format("%Y-%m-%d").to_string());
+        }
         self.fetch_filtered_transactions_page(filters, limit, offset).await
     }
 

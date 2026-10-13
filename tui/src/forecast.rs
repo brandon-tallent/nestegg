@@ -380,8 +380,9 @@ pub fn detect(transactions: &[Txn], today: NaiveDate) -> Vec<Stream> {
     let earliest = today - Duration::days(LOOKBACK_DAYS);
     let mut by_merchant: HashMap<(&str, &str), Vec<&Txn>> = HashMap::new();
     // Matched statement credits are left out: they are accounted for through
-    // the purchase they refund, not as a stream of income of their own
-    for txn in transactions.iter().filter(|t| !t.is_matched_credit) {
+    // the purchase they refund, not as a stream of income of their own. Nor
+    // are a hidden account's: a 401k contribution is not a bill or a paycheck
+    for txn in transactions.iter().filter(|t| !t.is_matched_credit && !t.hidden_by_account) {
         if txn.date >= earliest && txn.amount != 0.0 && !txn.merchant.is_empty() {
             by_merchant.entry((txn.account_id.as_str(), txn.merchant.as_str())).or_default().push(txn);
         }
@@ -533,6 +534,7 @@ mod tests {
             recurring: false,
             needs_review: false,
             hide_from_reports: false,
+            hidden_by_account: false,
             one_time: false,
         }
     }
@@ -558,6 +560,17 @@ mod tests {
         assert_eq!(upcoming[0].date, date(2026, 10, 28));
         assert_eq!(upcoming[0].amount, -70.0);
         assert!(!upcoming[0].late);
+    }
+
+    #[test]
+    fn hidden_account_activity_is_not_a_bill() {
+        let today = date(2026, 10, 11);
+        let mut history = monthly("Contribution", date(2026, 4, 28), 6, |_| 1050.0);
+        for txn in &mut history {
+            txn.hide_from_reports = true;
+            txn.hidden_by_account = true;
+        }
+        assert!(detect(&history, today).is_empty());
     }
 
     #[test]

@@ -681,6 +681,7 @@ impl Household {
             recurring: false,
             needs_review: false,
             hide_from_reports: false,
+            hidden_by_account: false,
             one_time: false,
         });
         let last = self.transactions.len() - 1;

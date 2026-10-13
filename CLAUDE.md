@@ -61,7 +61,7 @@ cd browser && MONARCH_EMAIL=... MONARCH_PASSWORD=... npm run refresh
 
 ### Database Schema
 Located in `/sql/schema.sql`, embedded in the binary and applied on every connect (keep every statement idempotent).
-- **Mirrors** (one row per Monarch object, upserted): `transactions` (full history; `deleted_at` marks ones gone from Monarch), `transaction_tags`, `merchants`, `categories`, `category_groups`, `tags`, `securities`, `position_tax_lots`, `account_daily_balances`, `aggregate_snapshots`
+- **Mirrors** (one row per Monarch object, upserted): `transactions` (full history; `deleted_at` marks ones gone from Monarch; `hidden_by_account` marks those of 401k, brokerage and loan accounts, which never count as spending), `transaction_tags`, `merchants`, `categories`, `category_groups`, `tags`, `securities`, `position_tax_lots`, `account_daily_balances`, `aggregate_snapshots`
 - **Snapshots** (one row per object per run): `accounts`, `holdings` (per security), `positions` (per security per account), `portfolio_snapshots`, `recurring_streams`
 - **Documents** (whole responses as JSONB, one version per day): `documents` with kinds `budget`, `goals`, `credit_score`, `household`, `household_members`
 - Most tables have a `raw` JSONB column with the object exactly as Monarch returned it.

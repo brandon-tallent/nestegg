@@ -150,6 +150,8 @@ CREATE INDEX IF NOT EXISTS idx_account_daily_balances_date ON account_daily_bala
 -- =============================================================================
 -- TRANSACTIONS TABLE - Full transaction history (mirror, one row per transaction)
 -- =============================================================================
+-- Accounts whose transactions Monarch hides from reports (investments, loans)
+-- are mirrored too, with hidden_by_account set; leave them out of spending.
 -- run_id is the last run that saw the transaction. A transaction that Monarch
 -- no longer returns is kept with deleted_at set rather than removed.
 CREATE TABLE IF NOT EXISTS transactions (
@@ -497,6 +499,7 @@ SELECT
     SUM(t.amount) AS total_amount
 FROM latest_transactions t
 WHERE t.amount < 0  -- expenses are negative
+  AND NOT COALESCE(t.hidden_by_account, false)  -- not a brokerage's buys or a loan's payments
 GROUP BY date_trunc('month', t.date), t.category_name
 ORDER BY month DESC, total_amount ASC;
 

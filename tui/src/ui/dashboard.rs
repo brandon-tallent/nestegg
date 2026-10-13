@@ -201,6 +201,7 @@ fn draw_transactions(frame: &mut Frame, area: Rect, app: &App) {
         .data
         .transactions
         .iter()
+        .filter(|t| !t.hidden_by_account)
         .take(inner.height as usize)
         .map(|t| {
             Line::from(vec![
