@@ -66,7 +66,7 @@ const REIMBURSED_STREAM_SHARE: f64 = 0.5;
 /// History older than this is ignored (long enough to see two yearly payments)
 const LOOKBACK_DAYS: i64 = 800;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Cadence {
     Weekly,
     Biweekly,
@@ -138,7 +138,7 @@ impl Cadence {
 type Payment = (NaiveDate, f64, f64);
 
 /// A payment an account makes or receives on a steady rhythm
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, Debug, Clone)]
 pub struct Stream {
     pub account_id: String,
     pub merchant: String,
@@ -153,15 +153,18 @@ pub struct Stream {
     pub payments: usize,
     /// The latest payments the rhythm was judged on, oldest first, as
     /// (date, amount charged, statement credits matched to it)
+    #[serde(skip)]
     recent: Vec<Payment>,
     /// Typical gap in days, for cadences not tied to a day of the month
+    #[serde(skip)]
     gap_days: i64,
     /// Typical day of the month, for cadences that are
+    #[serde(skip)]
     day_of_month: u32,
 }
 
 /// One expected future payment
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, Debug, Clone)]
 pub struct Upcoming {
     pub date: NaiveDate,
     pub merchant: String,

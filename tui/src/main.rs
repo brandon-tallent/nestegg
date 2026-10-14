@@ -2,13 +2,13 @@
 
 mod anonymize;
 mod app;
-mod data;
+use nestegg::data;
 mod demo;
 mod dice;
-mod equity;
+use nestegg::equity;
 mod fmt;
 mod payoff;
-mod forecast;
+use nestegg::forecast;
 mod search;
 mod theme;
 mod mouse;

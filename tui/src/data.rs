@@ -11,7 +11,7 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Row};
 use std::collections::HashMap;
 
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, Debug, Clone)]
 pub struct Account {
     pub id: String,
     pub name: String,
@@ -37,7 +37,7 @@ pub struct Account {
     pub minimum_payment: Option<f64>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, Debug, Clone)]
 pub struct Txn {
     pub id: String,
     pub date: NaiveDate,
@@ -78,7 +78,7 @@ impl Txn {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(serde::Serialize, Debug, Clone, Copy)]
 pub struct NetWorthPoint {
     pub date: NaiveDate,
     pub net_worth: f64,
@@ -87,7 +87,7 @@ pub struct NetWorthPoint {
 }
 
 /// One security across every account that holds it
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, Debug, Clone)]
 pub struct Holding {
     pub name: String,
     pub ticker: String,
@@ -100,7 +100,7 @@ pub struct Holding {
 }
 
 /// One security in one account
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, Debug, Clone)]
 pub struct Position {
     pub account_id: String,
     pub account_name: String,
@@ -113,19 +113,19 @@ pub struct Position {
     pub cost_basis: Option<f64>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, Debug, Clone)]
 pub struct Category {
     pub name: String,
     pub group_id: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, Debug, Clone)]
 pub struct CategoryGroup {
     pub id: String,
     pub name: String,
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(serde::Serialize, Debug, Clone, Copy, Default)]
 pub struct Portfolio {
     pub total_value: f64,
     pub one_day_change_pct: f64,
@@ -135,7 +135,7 @@ pub struct Portfolio {
 pub const ONE_TIME_TAG: &str = "One-time";
 
 /// Income and spending for one calendar month
-#[derive(Debug, Clone, Copy)]
+#[derive(serde::Serialize, Debug, Clone, Copy)]
 pub struct MonthFlow {
     /// First day of the month
     pub month: NaiveDate,
@@ -170,7 +170,7 @@ impl MonthFlow {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(serde::Serialize, Debug, Clone, Default)]
 pub struct Data {
     pub synced_at: Option<DateTime<Utc>>,
     pub accounts: Vec<Account>,
@@ -315,6 +315,15 @@ async fn document(pool: &PgPool, kind: &str) -> Result<Option<Value>> {
 }
 
 pub async fn load(pool: &PgPool) -> Result<Data> {
+    load_impl(pool, false).await
+}
+
+/// Services must surface a failed equity query instead of reporting empty holdings.
+pub async fn load_strict(pool: &PgPool) -> Result<Data> {
+    load_impl(pool, true).await
+}
+
+async fn load_impl(pool: &PgPool, require_equity: bool) -> Result<Data> {
     let mut data = Data {
         synced_at: sqlx::query("SELECT run_at FROM latest_run")
             .fetch_optional(pool)
@@ -603,7 +612,11 @@ pub async fn load(pool: &PgPool) -> Result<Data> {
     }
 
     // A mirror that has never had a Carta capture loaded simply has no equity
-    data.equity = load_equity(pool).await.unwrap_or_default();
+    data.equity = if require_equity {
+        load_equity(pool).await?
+    } else {
+        load_equity(pool).await.unwrap_or_default()
+    };
 
     data.derive();
     Ok(data)

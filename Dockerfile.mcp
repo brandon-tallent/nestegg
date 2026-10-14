@@ -1,0 +1,18 @@
+# Same Rust data model as the TUI; no scraper, browser or login credentials.
+FROM rust:latest AS build
+WORKDIR /build
+COPY tui/Cargo.toml tui/Cargo.lock ./
+# Cache dependencies independently of source edits.
+RUN mkdir -p src/bin && echo 'fn main() {}' > src/main.rs \
+    && echo 'fn main() {}' > src/bin/nestegg-mcp.rs \
+    && cargo build --release --locked --features mcp --bin nestegg-mcp \
+    && rm -rf src
+COPY tui/src ./src
+RUN touch src/bin/nestegg-mcp.rs && cargo build --release --locked --features mcp --bin nestegg-mcp
+
+FROM debian:trixie-slim
+COPY --from=build /build/target/release/nestegg-mcp /usr/local/bin/nestegg-mcp
+USER 1000:1000
+ENV NESTEGG_MCP_BIND=0.0.0.0:8091 RUST_LOG=info
+EXPOSE 8091
+ENTRYPOINT ["nestegg-mcp"]

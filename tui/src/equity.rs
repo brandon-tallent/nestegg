@@ -19,7 +19,7 @@ const LONG_TERM_MONTHS: u32 = 12;
 /// Months from the grant an ISO's shares must be held past to keep ISO treatment
 const ISO_GRANT_MONTHS: u32 = 24;
 
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, Debug, Clone)]
 pub struct Issuer {
     pub id: i64,
     pub name: String,
@@ -28,7 +28,7 @@ pub struct Issuer {
     pub as_of: Option<NaiveDate>,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(serde::Serialize, Debug, Clone, Default)]
 pub struct Grant {
     pub id: i64,
     pub issuer_id: i64,
@@ -76,7 +76,7 @@ impl Grant {
 }
 
 /// One tranche of a grant vesting
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, Debug, Clone)]
 pub struct VestEvent {
     pub grant_id: i64,
     pub date: NaiveDate,
@@ -86,7 +86,7 @@ pub struct VestEvent {
     pub nso: Option<f64>,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(serde::Serialize, Debug, Clone, Default)]
 pub struct Certificate {
     pub issuer_id: i64,
     pub label: String,
@@ -108,7 +108,7 @@ pub struct Certificate {
     pub exercised_from: String,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(serde::Serialize, Debug, Clone, Default)]
 pub struct Exercise {
     pub issuer_id: i64,
     pub grant_label: String,
@@ -126,7 +126,7 @@ pub struct Exercise {
 }
 
 /// A sale of shares into a company tender offer
-#[derive(Debug, Clone, Default)]
+#[derive(serde::Serialize, Debug, Clone, Default)]
 pub struct Tender {
     pub name: String,
     pub status: String,
@@ -141,14 +141,14 @@ pub struct Tender {
 }
 
 /// A company's fair market value as one capture found it
-#[derive(Debug, Clone, Copy)]
+#[derive(serde::Serialize, Debug, Clone, Copy)]
 pub struct Snapshot {
     pub issuer_id: i64,
     pub date: NaiveDate,
     pub fmv: Option<f64>,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(serde::Serialize, Debug, Clone, Default)]
 pub struct Equity {
     /// When Carta was last read
     pub captured_at: Option<DateTime<Utc>>,
@@ -164,7 +164,7 @@ pub struct Equity {
 }
 
 /// Holdings added up at one share price
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[derive(serde::Serialize, Debug, Clone, Copy, Default, PartialEq)]
 pub struct Summary {
     pub shares: f64,
     pub shares_value: f64,
@@ -190,14 +190,14 @@ impl Summary {
 }
 
 /// Options counted by how they are taxed
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[derive(serde::Serialize, Debug, Clone, Copy, Default, PartialEq)]
 pub struct Split {
     pub iso: f64,
     pub nso: f64,
 }
 
 /// A grant's options at each stage, divided between ISO and NSO
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[derive(serde::Serialize, Debug, Clone, Copy, Default, PartialEq)]
 pub struct GrantSplit {
     pub granted: Split,
     pub vested: Split,
@@ -207,7 +207,7 @@ pub struct GrantSplit {
 }
 
 /// Options vesting on one day, across grants
-#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, Debug, Clone, PartialEq)]
 pub struct Vesting {
     pub date: NaiveDate,
     pub quantity: f64,
@@ -219,14 +219,14 @@ pub struct Vesting {
 }
 
 /// The record behind an `Event`, as an index into `Equity`'s lists
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(serde::Serialize, Debug, Clone, Copy, PartialEq)]
 pub enum Source {
     Exercise(usize),
     Tender(usize),
 }
 
 /// Something that happened to the holdings: an exercise or a sale
-#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, Debug, Clone, PartialEq)]
 pub struct Event {
     pub source: Source,
     pub date: Option<NaiveDate>,

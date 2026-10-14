@@ -27,8 +27,11 @@ browser/carta.env
 .DS_Store
 Thumbs.db
 
-# This machine's own Kubernetes overlay
+# This machine's own Kubernetes overlay and MCP deployment settings
 k8s-local/
+
+# MCP client connection to this machine's own server
+.mcp.json
 
 # Secrets
 cookies.txt

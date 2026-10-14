@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "Terminal interface over the nestegg personal finance database"
 license = "MIT"
+default-run = "nestegg"
 
 # Standalone crate: kept out of the scraper's dependency graph and image build
 [workspace]
@@ -20,9 +21,48 @@ tokio = { version = "1", features = ["rt"] }
 clap = { version = "4", features = ["derive", "env"] }
 
 anyhow = "1"
-chrono = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
 serde_json = "1"
 
 # Write requests run on a worker thread so the UI stays responsive
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 serde = { version = "1", features = ["derive"] }
+
+[features]
+mcp = ["dep:rmcp", "dep:rmcp-macros", "dep:schemars", "dep:axum", "dep:tokio-util", "dep:tracing", "dep:tracing-subscriber", "tokio/full"]
+
+[dependencies.rmcp]
+version = "=1.6.0"
+optional = true
+features = ["macros", "server", "transport-streamable-http-server"]
+
+[dependencies.schemars]
+version = "1"
+optional = true
+
+[dependencies.axum]
+version = "0.8"
+optional = true
+
+[dependencies.tokio-util]
+version = "0.7"
+optional = true
+
+[dependencies.tracing]
+version = "0.1"
+optional = true
+
+[dependencies.tracing-subscriber]
+version = "0.3"
+optional = true
+features = ["env-filter"]
+
+[[bin]]
+name = "nestegg-mcp"
+path = "src/bin/nestegg-mcp.rs"
+required-features = ["mcp"]
+
+# Keep the macro and runtime APIs together (rmcp 1.6 allows newer macros).
+[dependencies.rmcp-macros]
+version = "=1.6.0"
+optional = true
