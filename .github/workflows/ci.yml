@@ -44,6 +44,9 @@ jobs:
       - uses: docker/setup-buildx-action@v4
       - name: Build the image
         uses: docker/build-push-action@v7
+        env:
+          # No build record attached to the run
+          DOCKER_BUILD_RECORD_UPLOAD: false
         with:
           context: .
           load: true
