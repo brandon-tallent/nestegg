@@ -1,7 +1,7 @@
 # Deployment
 
-nestegg's backend is one container image (the Rust scraper and the Playwright
-logins) plus PostgreSQL. The terminal app is installed
+nestegg's backend is one container image (the Rust scraper, the Playwright
+logins and the MCP server) plus PostgreSQL. The terminal app is installed
 separately and only needs to reach the database.
 
 For a single machine, use Docker Compose as described in the
@@ -10,8 +10,8 @@ For a single machine, use Docker Compose as described in the
 ## The image
 
 `ghcr.io/brandon-tallent/nestegg` is built from the `Dockerfile` by GitHub
-Actions on every push to `main`. It has three stages: the Rust CLI (needs cmake
-and clang for BoringSSL), the browser automation, and a runtime
+Actions on every push to `main`. It has four stages: the Rust CLI (needs cmake
+and clang for BoringSSL), the MCP server, the browser automation, and a runtime
 based on Microsoft's Playwright image, which carries the browser. The
 Playwright image tag must match the `playwright` version pinned in
 `browser/package.json`.
@@ -31,6 +31,7 @@ The first argument picks what the container does:
 | `force-scrape` | Make Monarch re-sync every account with its institution first |
 | `refresh` | Only refresh the session cookies |
 | `carta` | Capture Carta holdings and load them |
+| `mcp` | Serve the [MCP server](MCP.md) on port 8091 |
 | `cli ARGS…` | Run `monarch-scraper` with the given arguments |
 | `shell` | A shell, for debugging |
 
@@ -46,6 +47,7 @@ The first argument picks what the container does:
 | `TRANSACTION_DAYS`, `HISTORY_DAYS` | sync | Limit how far back to read; 0 or unset means everything |
 | `NTFY_URL` | sync | Notification after each run |
 | `CARTA_EMAIL`, `CARTA_PASSWORD`, `CARTA_MFA_METHOD`, `CARTA_OTP` | `carta` | Carta login |
+| `NESTEGG_MCP_ALLOWED_HOSTS` | `mcp` | Host names clients may use; default `localhost,127.0.0.1,::1` |
 
 ### State
 
@@ -129,6 +131,11 @@ be named `<namespace>-secrets`. From elsewhere, port-forward instead:
 kubectl -n nestegg port-forward svc/postgres 5432:5432 &
 nestegg --database postgresql://nestegg:PASSWORD@localhost:5432/nestegg
 ```
+
+### The MCP server
+
+`k8s/mcp.yaml` is applied on its own, by `scripts/deploy-mcp.sh`; see
+[MCP.md](MCP.md).
 
 ## Troubleshooting
 

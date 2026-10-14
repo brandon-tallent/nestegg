@@ -28,8 +28,9 @@ cp .env.example .env
 docker compose up -d
 ```
 
-This starts Postgres, reachable only from localhost, and a sync container that
-logs into Monarch and copies your data every 4 hours.
+This starts Postgres, reachable only from localhost, a sync container that
+logs into Monarch and copies your data every 4 hours, and an
+[MCP server](#ask-an-ai-assistant).
 
 The first time it signs in, Monarch emails you a 6-digit code. Watch the log
 and pass the code along when it asks:
@@ -76,6 +77,17 @@ to know about:
 - `POSTGRES_PORT` is the port Postgres uses on localhost.
 - Set `NESTEGG_IMAGE=nestegg:local` and run `docker compose build` to build the
   image yourself instead of pulling the published one.
+
+## Ask an AI assistant
+
+Compose also runs an MCP server at `http://localhost:8091/mcp`, so Claude,
+Codex or another assistant can answer questions from your data:
+
+```bash
+claude mcp add --transport http nestegg http://localhost:8091/mcp
+```
+
+It is read-only. See [docs/MCP.md](docs/MCP.md).
 
 ## More
 

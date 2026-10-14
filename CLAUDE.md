@@ -8,7 +8,8 @@ nestegg pulls financial data into one PostgreSQL database and browses it in a te
 
 1. **Rust CLI** (`/src`) - API client that mirrors Monarch into PostgreSQL
 2. **Browser Automation** (`/browser`) - Playwright-based login that keeps the session cookies fresh
-3. **TUI** (`/tui`) - Standalone ratatui crate (`nestegg`) that reads the Postgres mirror; see `tui/README.md`. Not part of the image build. Check layouts with `nestegg --demo --dump --screen <name> --size 140x40` (`--demo` is a made-up household and needs no database).
+3. **TUI** (`/tui`) - Standalone ratatui crate (`nestegg`) that reads the Postgres mirror; see `tui/README.md`. Check layouts with `nestegg --demo --dump --screen <name> --size 140x40` (`--demo` is a made-up household and needs no database).
+4. **MCP server** (`tui/src/mcp.rs`, `tui/src/bin/nestegg-mcp.rs`) - The tui crate's optional `mcp` feature: read-only MCP tools over the mirror, reusing the TUI's calculations; see `docs/MCP.md`. Test with `cargo test --manifest-path tui/Cargo.toml --features mcp`.
 
 ## Build Commands
 
@@ -106,11 +107,12 @@ Docker multi-stage build produces a single image for the sync. Entry point modes
 - `cli` - Run Rust CLI with custom args
 - `schedule` - `scrape` now and every `SYNC_INTERVAL_HOURS`; what `docker-compose.yml` runs
 - `carta` - Capture Carta holdings and load them
+- `mcp` - Serve the MCP server on port 8091
 - `login` - Interactive browser login
 
-`docker-compose.yml` is the single-machine deployment (Postgres and the sync on a schedule); `.env.example` lists its settings. `monarch-otp CODE` and `carta-otp CODE` inside the container hand a waiting login its verification code. `.github/workflows/ci.yml` tests both crates, smoke-tests the Compose stack with `examples/carta-sample.json`, and publishes the image to GHCR from `main`.
+`docker-compose.yml` is the single-machine deployment (Postgres, the sync on a schedule and the MCP server); `.env.example` lists its settings. `monarch-otp CODE` and `carta-otp CODE` inside the container hand a waiting login its verification code. `.github/workflows/ci.yml` tests both crates, smoke-tests the Compose stack with `examples/carta-sample.json`, and publishes the image to GHCR from `main`.
 
-Kubernetes manifests in `/k8s/`: CronJob runs every 4 hours. Storage uses the cluster's default storage class. `monarch-sync-force` is a suspended CronJob for on-demand force refreshes:
+Kubernetes manifests in `/k8s/`: CronJob runs every 4 hours. Storage uses the cluster's default storage class. `k8s/mcp.yaml` is the MCP server, deployed on its own by `scripts/deploy-mcp.sh` from settings in the git-ignored `k8s-local/mcp.env`. `monarch-sync-force` is a suspended CronJob for on-demand force refreshes:
 `kubectl -n nestegg create job --from=cronjob/monarch-sync-force force-$(date +%s)`
 
 ## Code Patterns

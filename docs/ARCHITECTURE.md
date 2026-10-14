@@ -61,3 +61,10 @@ the schema does not break out yet is still there to query.
 read-only and talks only to PostgreSQL: it loads the mirror at startup, and
 everything on screen, including recurring-payment detection and the equity
 valuations, is computed locally from that. See [tui/README.md](../tui/README.md).
+
+## MCP server
+
+The `tui` crate's optional `mcp` feature builds `nestegg-mcp`, which serves
+the mirror to AI assistants over MCP. It shares the terminal app's data,
+forecast and equity modules, so its answers match the screens, and like the
+app it only reads. See [MCP.md](MCP.md).
