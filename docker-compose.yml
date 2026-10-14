@@ -1,4 +1,4 @@
-# nestegg backend: the database and the scheduled sync. Copy .env.example to
+# nestegg backend: the database, the scheduled sync and the MCP server. Copy .env.example to
 # .env first. See README.md.
 name: nestegg
 
@@ -46,6 +46,28 @@ services:
       - browser-state:/app/browser/state
     # Chrome needs more shared memory than the 64MB default
     shm_size: 1gb
+
+  mcp:
+    image: ${NESTEGG_IMAGE:-ghcr.io/brandon-tallent/nestegg:latest}
+    restart: unless-stopped
+    command: ["mcp"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Every transaction the server opens is read-only
+      DATABASE_URL: postgresql://nestegg:${POSTGRES_PASSWORD}@postgres:5432/nestegg
+      # Host names clients may use to reach it
+      NESTEGG_MCP_ALLOWED_HOSTS: ${MCP_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      RUST_LOG: info,rmcp=warn
+    ports:
+      # Local only, like Postgres
+      - "127.0.0.1:${MCP_PORT:-8091}:8091"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8091/readyz').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
 
 volumes:
   postgres-data:

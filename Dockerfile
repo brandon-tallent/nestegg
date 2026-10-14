@@ -1,7 +1,9 @@
-# Multi-stage Dockerfile for the nestegg backend: scraper and browser logins
+# Multi-stage Dockerfile for the nestegg backend: scraper, browser logins and
+# the MCP server
 # Stage 1: Build Rust CLI
-# Stage 2: Build Node.js browser automation
-# Stage 3: Final runtime image
+# Stage 2: Build the MCP server
+# Stage 3: Build Node.js browser automation
+# Stage 4: Final runtime image
 
 # =============================================================================
 # Stage 1: Build Rust CLI
@@ -27,7 +29,21 @@ COPY src ./src
 RUN touch src/main.rs && cargo build --release --locked
 
 # =============================================================================
-# Stage 2: Build Node.js browser automation
+# Stage 2: Build the MCP server (the tui crate's optional `mcp` feature)
+# =============================================================================
+FROM rust:latest AS mcp-builder
+
+WORKDIR /build
+COPY tui/Cargo.toml tui/Cargo.lock ./
+RUN mkdir -p src/bin && echo "fn main() {}" > src/main.rs \
+    && echo "fn main() {}" > src/bin/nestegg-mcp.rs \
+    && cargo build --release --locked --features mcp --bin nestegg-mcp \
+    && rm -rf src
+COPY tui/src ./src
+RUN touch src/bin/nestegg-mcp.rs && cargo build --release --locked --features mcp --bin nestegg-mcp
+
+# =============================================================================
+# Stage 3: Build Node.js browser automation
 # =============================================================================
 FROM node:22-bookworm AS node-builder
 
@@ -41,7 +57,7 @@ RUN npm ci
 COPY browser/src ./src
 
 # =============================================================================
-# Stage 3: Final runtime image
+# Stage 4: Final runtime image
 # =============================================================================
 # Must match the playwright version pinned in browser/package.json, since the
 # image ships the browser build that version drives
@@ -54,6 +70,7 @@ WORKDIR /app
 
 # Copy Rust binary
 COPY --from=rust-builder /build/target/release/monarch-scraper /build/target/release/nestegg-api /usr/local/bin/
+COPY --from=mcp-builder /build/target/release/nestegg-mcp /usr/local/bin/
 
 # Copy browser automation
 COPY --from=node-builder /build/browser ./browser
@@ -77,7 +94,7 @@ ENV NODE_ENV=production \
     DEVICE_UUID_PATH=/app/output/device-uuid.txt
 
 LABEL org.opencontainers.image.source="https://github.com/brandon-tallent/nestegg" \
-      org.opencontainers.image.description="nestegg backend: Monarch and Carta scrapers" \
+      org.opencontainers.image.description="nestegg backend: Monarch and Carta scrapers, MCP server" \
       org.opencontainers.image.licenses="MIT"
 
 ENTRYPOINT ["docker-entrypoint.sh"]

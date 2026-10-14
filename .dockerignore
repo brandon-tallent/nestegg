@@ -3,4 +3,4 @@ target
 output
 **/node_modules
 browser/state
-tui
+tui/target

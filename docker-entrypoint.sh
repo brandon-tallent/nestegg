@@ -153,6 +153,12 @@ case "${1:-scrape}" in
         monarch-scraper "$@"
         ;;
 
+    mcp)
+        # Read-only MCP server over the mirror
+        export NESTEGG_MCP_BIND="${NESTEGG_MCP_BIND:-0.0.0.0:8091}"
+        exec nestegg-mcp
+        ;;
+
     login)
         # Interactive login (not for production use)
         log "Starting interactive login"

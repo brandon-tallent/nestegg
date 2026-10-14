@@ -30,7 +30,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: tui
-      - run: cargo test --locked --manifest-path tui/Cargo.toml
+      - run: cargo test --locked --manifest-path tui/Cargo.toml --features mcp
 
   stack:
     name: Build image and smoke-test the stack
@@ -70,6 +70,14 @@ jobs:
             --dump --screen equity --keys enter | tee equity.txt
           grep -q "Acme Rockets" equity.txt
           grep -q "ISO/NSO Split" equity.txt
+      - name: Ask the MCP server about the sample
+        run: |
+          docker compose up -d --wait mcp
+          curl -fsS http://localhost:8091/mcp \
+            -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_equity_summary","arguments":{}}}' \
+            | tee mcp.json
+          grep -q "Acme Rockets" mcp.json
 
       - name: Publish the image
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
