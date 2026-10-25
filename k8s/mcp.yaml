@@ -23,6 +23,7 @@ spec:
         runAsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
+      hostUsers: false
       containers:
         - name: mcp
           # deploy-mcp.sh replaces this with an immutable build tag.

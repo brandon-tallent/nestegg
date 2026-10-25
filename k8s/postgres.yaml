@@ -37,9 +37,18 @@ spec:
       - key: node-role.kubernetes.io/control-plane
         operator: Exists
         effect: NoSchedule
+      # Hardening: user namespace (container uids map to unprivileged host
+      # uids), no ServiceAccount token, default seccomp profile.
+      hostUsers: false
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: postgres
         image: postgres:16-alpine
+        securityContext:
+          allowPrivilegeEscalation: false
         ports:
         - containerPort: 5432
           name: postgres
